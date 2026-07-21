@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS transparency_documents (
+  id CHAR(36) PRIMARY KEY,
+  slug VARCHAR(180) NOT NULL UNIQUE,
+  title VARCHAR(220) NOT NULL,
+  category VARCHAR(120) NOT NULL,
+  year INT NOT NULL,
+  description TEXT NOT NULL,
+  file_type VARCHAR(20) NOT NULL DEFAULT 'PDF',
+  file_size_label VARCHAR(40) NOT NULL DEFAULT '-',
+  file_url VARCHAR(500) NULL,
+  status ENUM('draft', 'published', 'archived') NOT NULL DEFAULT 'draft',
+  published_at DATETIME NULL,
+  display_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_transparency_status_order (status, display_order),
+  INDEX idx_transparency_category_status (category, status),
+  INDEX idx_transparency_year_status (year, status),
+  INDEX idx_transparency_published_at (published_at)
+);

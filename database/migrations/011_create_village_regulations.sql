@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS village_regulations (
+  id CHAR(36) PRIMARY KEY,
+  slug VARCHAR(180) NOT NULL UNIQUE,
+  regulation_number VARCHAR(80) NOT NULL,
+  title VARCHAR(240) NOT NULL,
+  year INT NOT NULL,
+  category VARCHAR(120) NOT NULL,
+  summary TEXT NOT NULL,
+  file_type VARCHAR(20) NOT NULL DEFAULT 'PDF',
+  file_size_label VARCHAR(40) NOT NULL DEFAULT '-',
+  file_url VARCHAR(500) NULL,
+  status ENUM('active', 'archived') NOT NULL DEFAULT 'active',
+  enacted_at DATETIME NOT NULL,
+  display_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_village_regulations_status_order (status, display_order),
+  INDEX idx_village_regulations_category_status (category, status),
+  INDEX idx_village_regulations_year_status (year, status),
+  INDEX idx_village_regulations_enacted_at (enacted_at)
+);

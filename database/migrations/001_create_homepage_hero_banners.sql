@@ -1,0 +1,56 @@
+CREATE TABLE IF NOT EXISTS homepage_hero_banners (
+  id CHAR(36) PRIMARY KEY,
+  eyebrow VARCHAR(120) NOT NULL,
+  title VARCHAR(180) NOT NULL,
+  subtitle TEXT NOT NULL,
+  image_url VARCHAR(500) NOT NULL,
+  image_alt VARCHAR(180) NOT NULL,
+  primary_cta_label VARCHAR(80) NOT NULL,
+  primary_cta_href VARCHAR(255) NOT NULL,
+  secondary_cta_label VARCHAR(80) NULL,
+  secondary_cta_href VARCHAR(255) NULL,
+  is_active BOOLEAN NOT NULL DEFAULT FALSE,
+  display_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_homepage_hero_banners_active_order (is_active, display_order)
+);
+
+INSERT INTO homepage_hero_banners (
+  id,
+  eyebrow,
+  title,
+  subtitle,
+  image_url,
+  image_alt,
+  primary_cta_label,
+  primary_cta_href,
+  secondary_cta_label,
+  secondary_cta_href,
+  is_active,
+  display_order
+) VALUES (
+  '8f6b54a1-7d8f-4e50-9d8f-6b0d3c2a7a10',
+  'Desa Keseneng Digital',
+  'Menjelajahi potensi pertanian dan kesenian Desa Keseneng',
+  'Temukan profil desa, kabar terbaru, statistik, dan potensi unggulan yang dikelola secara terbuka untuk warga dan publik.',
+  '/images/homepage/hero-keseneng.jpg',
+  'Panorama aktivitas warga dan potensi unggulan Desa Keseneng',
+  'Lihat Potensi Desa',
+  '/potensi',
+  'Baca Berita',
+  '/berita',
+  TRUE,
+  1
+) ON DUPLICATE KEY UPDATE
+  eyebrow = VALUES(eyebrow),
+  title = VALUES(title),
+  subtitle = VALUES(subtitle),
+  image_url = VALUES(image_url),
+  image_alt = VALUES(image_alt),
+  primary_cta_label = VALUES(primary_cta_label),
+  primary_cta_href = VALUES(primary_cta_href),
+  secondary_cta_label = VALUES(secondary_cta_label),
+  secondary_cta_href = VALUES(secondary_cta_href),
+  is_active = VALUES(is_active),
+  display_order = VALUES(display_order);
