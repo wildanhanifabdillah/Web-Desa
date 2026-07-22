@@ -4,8 +4,8 @@
     "private":  true,
     "scripts":  {
                     "dev":  "next dev",
-                    "build":  "next build",
-                    "start":  "next start",
+                    "build": "next build",
+                    "start": "concurrently \"next start\" \"npm run mqtt:collector\"",
                     "lint":  "eslint",
                     "mqtt:collector":  "node scripts/mqtt-collector.mjs"
                 },

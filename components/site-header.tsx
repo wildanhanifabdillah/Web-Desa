@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -193,23 +193,26 @@ export function SiteHeader() {
           </Link>
         </div>
 
-        <button
-          type="button"
-          className={`flex h-11 w-11 items-center justify-center rounded-md border text-sm font-semibold transition-colors lg:hidden ${
-            isScrolled
-              ? "border-slate-200 bg-white text-slate-900"
-              : "border-white/30 bg-white/10 text-white backdrop-blur-md"
-          }`}
-          aria-label="Buka menu navigasi"
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          <span className="flex h-5 w-5 flex-col justify-center gap-1.5" aria-hidden="true">
-            <span className={`h-0.5 rounded-full bg-current transition-transform ${isMenuOpen ? "translate-y-2 rotate-45" : ""}`} />
-            <span className={`h-0.5 rounded-full bg-current transition-opacity ${isMenuOpen ? "opacity-0" : "opacity-100"}`} />
-            <span className={`h-0.5 rounded-full bg-current transition-transform ${isMenuOpen ? "-translate-y-2 -rotate-45" : ""}`} />
-          </span>
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <DisasterStatusIndicator className="h-9 px-3 text-[0.68rem] tracking-[0.14em]" />
+          <button
+            type="button"
+            className={`flex h-11 w-11 items-center justify-center rounded-md border text-sm font-semibold transition-colors ${
+              isScrolled
+                ? "border-slate-200 bg-white text-slate-900"
+                : "border-white/30 bg-white/10 text-white backdrop-blur-md"
+            }`}
+            aria-label="Buka menu navigasi"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            <span className="flex h-5 w-5 flex-col justify-center gap-1.5" aria-hidden="true">
+              <span className={`h-0.5 rounded-full bg-current transition-transform ${isMenuOpen ? "translate-y-2 rotate-45" : ""}`} />
+              <span className={`h-0.5 rounded-full bg-current transition-opacity ${isMenuOpen ? "opacity-0" : "opacity-100"}`} />
+              <span className={`h-0.5 rounded-full bg-current transition-transform ${isMenuOpen ? "-translate-y-2 -rotate-45" : ""}`} />
+            </span>
+          </button>
+        </div>
       </div>
 
       {isMenuOpen ? (
@@ -268,3 +271,4 @@ function MobileLink({ href, children }: { href: string; children: React.ReactNod
     </Link>
   );
 }
+

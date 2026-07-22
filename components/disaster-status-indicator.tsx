@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -26,7 +26,7 @@ const statusLabels: Record<DisasterStatus, string> = {
   unknown: "Normal",
 };
 
-export function DisasterStatusIndicator() {
+export function DisasterStatusIndicator({ className = "" }: { className?: string }) {
   const [status, setStatus] = useState<DisasterStatus>("unknown");
   const [connectionState, setConnectionState] = useState<ConnectionState>("menghubungkan");
 
@@ -66,10 +66,11 @@ export function DisasterStatusIndicator() {
   return (
     <Link
       href="/siaga-bencana"
-      className={`hidden h-10 items-center rounded-md px-3 text-xs font-semibold uppercase tracking-[0.12em] shadow-sm transition-colors lg:flex ${statusStyles[status]}`}
+      className={`flex h-10 items-center rounded-md px-3 text-xs font-semibold uppercase tracking-[0.12em] shadow-sm transition-colors ${statusStyles[status]} ${className}`}
       title={`Status bencana: ${statusLabels[status]} (${connectionState})`}
     >
       {label}
     </Link>
   );
 }
+
