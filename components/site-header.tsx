@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { DisasterStatusIndicator } from "@/components/disaster-status-indicator";
 import type { SiteSettings } from "@/lib/site-settings";
 
 const fallbackSettings: Pick<SiteSettings, "brand" | "header"> = {
@@ -178,16 +179,19 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <Link
-          href={siteSettings.header.adminHref}
-          className={`hidden h-10 items-center rounded-md px-4 text-sm font-semibold transition-colors lg:flex ${
-            isScrolled
-              ? "bg-sage-700 text-white hover:bg-sage-800"
-              : "bg-white text-slate-950 hover:bg-sage-50"
-          }`}
-        >
-          {siteSettings.header.adminLabel}
-        </Link>
+        <div className="hidden items-center gap-2 lg:flex">
+          <DisasterStatusIndicator />
+          <Link
+            href={siteSettings.header.adminHref}
+            className={`flex h-10 items-center rounded-md px-4 text-sm font-semibold transition-colors ${
+              isScrolled
+                ? "bg-sage-700 text-white hover:bg-sage-800"
+                : "bg-white text-slate-950 hover:bg-sage-50"
+            }`}
+          >
+            {siteSettings.header.adminLabel}
+          </Link>
+        </div>
 
         <button
           type="button"
@@ -264,4 +268,3 @@ function MobileLink({ href, children }: { href: string; children: React.ReactNod
     </Link>
   );
 }
-
