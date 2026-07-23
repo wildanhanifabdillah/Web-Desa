@@ -1,29 +1,31 @@
 {
-    "name":  "desa1",
-    "version":  "0.1.0",
-    "private":  true,
-    "scripts":  {
-                    "dev":  "next dev",
-                    "build": "next build",
-                    "start": "concurrently \"next start\" \"npm run mqtt:collector\"",
-                    "lint":  "eslint",
-                    "mqtt:collector":  "node scripts/mqtt-collector.mjs"
-                },
-    "dependencies":  {
-                         "@google/genai":  "^2.12.0",
-                         "mqtt":  "^5.15.2",
-                         "next":  "16.2.10",
-                         "react":  "19.2.4",
-                         "react-dom":  "19.2.4"
-                     },
-    "devDependencies":  {
-                            "@tailwindcss/postcss":  "^4",
-                            "@types/node":  "^20",
-                            "@types/react":  "^19",
-                            "@types/react-dom":  "^19",
-                            "eslint":  "^9",
-                            "eslint-config-next":  "16.2.10",
-                            "tailwindcss":  "^4",
-                            "typescript":  "^5"
-                        }
+    "name": "desa1",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start:web": "next start",
+        "start": "concurrently --kill-others-on-fail --names next,mqtt \"npm run start:web\" \"npm run mqtt:collector\"",
+        "lint": "eslint",
+        "mqtt:collector": "node scripts/mqtt-collector.mjs"
+    },
+    "dependencies": {
+        "@google/genai": "^2.12.0",
+        "concurrently": "^10.0.3",
+        "mqtt": "^5.15.2",
+        "next": "16.2.10",
+        "react": "19.2.4",
+        "react-dom": "19.2.4"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4",
+        "@types/node": "^20",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "eslint": "^9",
+        "eslint-config-next": "16.2.10",
+        "tailwindcss": "^4",
+        "typescript": "^5"
+    }
 }
