@@ -1,8 +1,15 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import type { DisasterSensorSnapshot } from "@/lib/disaster-sensor-store";
-import { DISASTER_MQTT_CONFIG, type DisasterStatus } from "@/lib/disaster-mqtt";
+import { useEffect, useMemo, useState } from "react";
+import mqtt, { type MqttClient } from "mqtt";
+import {
+  DISASTER_MQTT_CONFIG,
+  DISASTER_SENSOR_TOPICS,
+  DISASTER_STATUS_TOPICS,
+  getDisasterMqttUrl,
+  normalizeDisasterStatus,
+  type DisasterStatus,
+} from "@/lib/disaster-mqtt";
 
 type SensorKey = "wind" | "temperature" | "humidity";
 type ConnectionState = "menghubungkan" | "sukses" | "error";
@@ -71,38 +78,57 @@ export function DisasterDashboardPage() {
   });
 
   useEffect(() => {
-    let isCancelled = false;
+    const mqttClient: MqttClient = mqtt.connect(getDisasterMqttUrl(), {
+      clientId: `desa_keseneng_dashboard_${Math.random().toString(16).slice(2, 10)}`,
+      clean: true,
+      connectTimeout: 4000,
+      reconnectPeriod: 1000,
+    });
 
-    async function loadStoredSnapshot() {
-      const response = await fetch("/api/disaster-sensors", { cache: "no-store" });
-
-      if (!response.ok) {
-        return;
-      }
-
-      const payload = (await response.json()) as { data?: DisasterSensorSnapshot };
-
-      if (!payload.data || isCancelled) {
-        return;
-      }
-
-      applyStoredSnapshot(payload.data, {
-        setStatus,
-        setLastTopic,
-        setLastUpdate,
-        setSeries,
-        setConnectionState,
+    mqttClient.on("connect", () => {
+      setConnectionState("sukses");
+      mqttClient.subscribe([...DISASTER_SENSOR_TOPICS, ...DISASTER_STATUS_TOPICS], { qos: 0, rh: 0 }, (error) => {
+        if (error) {
+          setConnectionState("error");
+        }
       });
-    }
+    });
 
-    loadStoredSnapshot().catch(() => undefined);
-    const intervalId = window.setInterval(() => {
-      loadStoredSnapshot().catch(() => undefined);
-    }, 5000);
+    mqttClient.on("message", (topic, payload) => {
+      const formattedTime = formatStoredTime(new Date().toISOString());
+      const message = payload.toString().trim();
+
+      setLastTopic(topic);
+      setLastUpdate(formattedTime);
+
+      if (DISASTER_STATUS_TOPICS.includes(topic as (typeof DISASTER_STATUS_TOPICS)[number])) {
+        setStatus(normalizeDisasterStatus(message));
+        return;
+      }
+
+      const sensorKey = getSensorKey(topic);
+
+      if (!sensorKey) {
+        return;
+      }
+
+      const numericValue = Number.parseFloat(message.replace(",", "."));
+
+      if (!Number.isFinite(numericValue)) {
+        return;
+      }
+
+      setSeries((currentSeries) => ({
+        ...currentSeries,
+        [sensorKey]: [...currentSeries[sensorKey], { time: formattedTime, value: numericValue }].slice(-40),
+      }));
+    });
+
+    mqttClient.on("close", () => setConnectionState("error"));
+    mqttClient.on("error", () => setConnectionState("error"));
 
     return () => {
-      isCancelled = true;
-      window.clearInterval(intervalId);
+      mqttClient.end();
     };
   }, []);
 
@@ -273,38 +299,11 @@ function RealtimeChart({
   );
 }
 
-function applyStoredSnapshot(
-  snapshot: DisasterSensorSnapshot,
-  setters: {
-    setStatus: Dispatch<SetStateAction<DisasterStatus>>;
-    setLastTopic: Dispatch<SetStateAction<string>>;
-    setLastUpdate: Dispatch<SetStateAction<string>>;
-    setSeries: Dispatch<SetStateAction<Record<SensorKey, SensorPoint[]>>>;
-    setConnectionState: Dispatch<SetStateAction<ConnectionState>>;
-  },
-) {
-  setters.setStatus(snapshot.status);
-  setters.setLastTopic(snapshot.lastTopic);
-  setters.setLastUpdate(formatStoredTime(snapshot.lastUpdate));
-
-  if (snapshot.connection === "online") {
-    setters.setConnectionState("sukses");
-  } else if (snapshot.connection === "error") {
-    setters.setConnectionState("error");
-  }
-
-  setters.setSeries({
-    wind: snapshot.sensors.wind.history.slice(-40).map(toSensorPoint),
-    temperature: snapshot.sensors.temperature.history.slice(-40).map(toSensorPoint),
-    humidity: snapshot.sensors.humidity.history.slice(-40).map(toSensorPoint),
-  });
-}
-
-function toSensorPoint(point: { time: string; value: number }): SensorPoint {
-  return {
-    time: formatStoredTime(point.time),
-    value: point.value,
-  };
+function getSensorKey(topic: string): SensorKey | null {
+  if (topic === DISASTER_MQTT_CONFIG.topics.wind) return "wind";
+  if (topic === DISASTER_MQTT_CONFIG.topics.temperature) return "temperature";
+  if (topic === DISASTER_MQTT_CONFIG.topics.humidity) return "humidity";
+  return null;
 }
 
 function formatStoredTime(value: string | null) {
