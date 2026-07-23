@@ -6,7 +6,6 @@
         "dev": "next dev",
         "build": "next build",
         "start:web": "next start",
-        "start": "concurrently --kill-others-on-fail --names next,mqtt \"npm run start:web\" \"npm run mqtt:collector\"",
         "lint": "eslint",
         "mqtt:collector": "node scripts/mqtt-collector.mjs"
     },
