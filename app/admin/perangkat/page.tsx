@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listOfficialRecords } from "@/lib/profile-officials";
 
+export const dynamic = "force-dynamic";
 export default function AdminPerangkatPage() {
   return (
     <AdminCrudPage

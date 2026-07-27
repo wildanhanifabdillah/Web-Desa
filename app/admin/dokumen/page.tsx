@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listVillageRegulationRecords } from "@/lib/village-regulation-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminDokumenPage() {
   const documents = await listVillageRegulationRecords();
 

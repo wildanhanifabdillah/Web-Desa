@@ -1,6 +1,8 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listAdminNews } from "@/lib/admin-news-store";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminBeritaPage() {
   const news = await listAdminNews();
 

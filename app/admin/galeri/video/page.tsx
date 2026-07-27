@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listGalleryVideoRecords } from "@/lib/gallery-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminGaleriVideoPage() {
   const videos = await listGalleryVideoRecords();
 

@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listCategoryRecords } from "@/lib/potential-category-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminPotensiKategoriPage() {
   const categories = await listCategoryRecords();
 

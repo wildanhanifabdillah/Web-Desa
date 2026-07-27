@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listTransparencyRecords } from "@/lib/transparency-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminTransparansiPage() {
   const documents = await listTransparencyRecords();
 

@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listAdminStatistics } from "@/lib/admin-statistics-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminStatistikPage() {
   const statistics = await listAdminStatistics();
 

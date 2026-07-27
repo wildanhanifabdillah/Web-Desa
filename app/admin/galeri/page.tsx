@@ -1,6 +1,7 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listGalleryAlbumRecords } from "@/lib/gallery-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminGaleriPage() {
   const albums = await listGalleryAlbumRecords();
   const rows = albums.map((album) => ({

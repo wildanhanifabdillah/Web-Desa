@@ -2,6 +2,7 @@ import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listCategoryRecords } from "@/lib/potential-category-store";
 import { listPotentialItems } from "@/lib/potential-item-store";
 
+export const dynamic = "force-dynamic";
 export default async function AdminPotensiPage() {
   const [categories, items] = await Promise.all([
     listCategoryRecords(),
