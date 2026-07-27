@@ -1,4 +1,4 @@
-﻿import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import type { AdminNewsInput } from "@/lib/admin-news-store";
 
 export type GeminiNewsDraftInput = {
@@ -24,7 +24,7 @@ type GeminiNewsDraftResponse = {
 };
 
 const fallbackModels = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash", "gemini-2.5-flash"];
-const allowedParagraphRange = { min: 3, max: 6 };
+const allowedParagraphRange = { min: 4, max: 8 };
 
 export async function generateGeminiNewsDraft(input: GeminiNewsDraftInput) {
   const validation = validateGeminiNewsDraftInput(input);
@@ -193,10 +193,10 @@ function normalizeDateInput(value: string) {
 }
 
 function clampParagraphCount(value: number | undefined) {
-  const paragraphCount = Number(value ?? 4);
+  const paragraphCount = Number(value ?? 6);
 
   if (!Number.isFinite(paragraphCount)) {
-    return 4;
+    return 6;
   }
 
   return Math.min(allowedParagraphRange.max, Math.max(allowedParagraphRange.min, Math.round(paragraphCount)));
@@ -209,8 +209,11 @@ function buildPrompt(input: Required<GeminiNewsDraftInput>) {
     "Jangan mengarang fakta spesifik yang tidak diberikan. Jika data opsional kosong, tulis secara umum dan tetap faktual.",
     `Gaya tulisan: ${input.style}.`,
     `Jumlah paragraf isi berita: ${input.paragraphCount}.`,
+    "Setiap paragraf isi wajib terdiri dari 3-5 kalimat utuh, bukan hanya satu kalimat pendek.",
+    "Panjang content minimal sekitar 450 kata untuk 6 paragraf; sesuaikan proporsional jika jumlah paragraf berbeda.",
+    "Kembangkan isi dengan konteks kegiatan, tujuan, proses pelaksanaan, manfaat bagi warga, respons/harapan, dan tindak lanjut.",
     "Struktur JSON wajib: {\"title\": string, \"excerpt\": string, \"content\": string, \"category\": string, \"imageAlt\": string}.",
-    "Aturan konten: title maksimal 90 karakter, excerpt 1 kalimat ringkas maksimal 180 karakter, content beberapa paragraf dipisah dengan dua newline.",
+    "Aturan konten: title maksimal 90 karakter, excerpt 1 kalimat ringkas maksimal 180 karakter, content beberapa paragraf panjang dipisah dengan dua newline.",
     "",
     "Data berita:",
     `Topik/Judul utama: ${input.topic}`,

@@ -390,7 +390,7 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
     people: "",
     supportingData: "",
     style: "Portal berita",
-    paragraphCount: "4",
+    paragraphCount: "6",
     authorName: "Admin Desa Keseneng",
   });
   const [isGenerating, setIsGenerating] = useState(false);
@@ -444,7 +444,7 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
         <SelectInput label="Kategori" value={form.category} onChange={(value) => setForm((current) => ({ ...current, category: value }))} options={["Pemerintahan", "Kesehatan", "Pendidikan", "Teknologi", "Ekonomi", "Olahraga", "Pembangunan", "Sosial", "Budaya"]} />
         <SelectInput label="Gaya" value={form.style} onChange={(value) => setForm((current) => ({ ...current, style: value }))} options={["Portal berita", "Formal", "Singkat", "SEO"]} />
         <TextInput label="Pihak terlibat" value={form.people} onChange={(value) => setForm((current) => ({ ...current, people: value }))} placeholder="Opsional" />
-        <SelectInput label="Paragraf" value={form.paragraphCount} onChange={(value) => setForm((current) => ({ ...current, paragraphCount: value }))} options={["3", "4", "5", "6"]} />
+        <SelectInput label="Paragraf" value={form.paragraphCount} onChange={(value) => setForm((current) => ({ ...current, paragraphCount: value }))} options={["4", "5", "6", "7", "8"]} />
         <div className="sm:col-span-2">
           <TextArea label="Data/kutipan" value={form.supportingData} onChange={(value) => setForm((current) => ({ ...current, supportingData: value }))} placeholder="Opsional, misalnya jumlah peserta atau kutipan narasumber." />
         </div>

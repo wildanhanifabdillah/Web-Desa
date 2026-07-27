@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -168,8 +168,8 @@ export function NewsDetailPage({
             </div>
           ) : null}
           <div className="mt-6 space-y-5 text-base leading-8 text-slate-600">
-            {news.content.split("\n\n").map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
+            {getContentParagraphs(news.content).map((paragraph, index) => (
+              <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
             ))}
           </div>
 
@@ -268,6 +268,20 @@ export function NewsDetailPage({
   );
 }
 
+function getContentParagraphs(content: string) {
+  const normalizedContent = content.trim();
+
+  if (!normalizedContent) {
+    return [];
+  }
+
+  const separator = /\n\s*\n/.test(normalizedContent) ? /\n\s*\n/ : /\n+/;
+
+  return normalizedContent
+    .split(separator)
+    .map((paragraph) => paragraph.replace(/\s*\n\s*/g, " ").trim())
+    .filter(Boolean);
+}
 function getCategoryVisual(item: PublicNewsItem) {
   return (
     categoryStyles[item.category] ?? {

@@ -1,4 +1,4 @@
-﻿import { createAdminNews } from "@/lib/admin-news-store";
+import { createAdminNews } from "@/lib/admin-news-store";
 import {
   generateGeminiNewsDraft,
   type GeminiNewsDraftInput,
@@ -50,7 +50,7 @@ async function parseDraftRequest(request: Request) {
       people: getFormString(formData, "people") ?? undefined,
       supportingData: getFormString(formData, "supportingData") ?? undefined,
       style: getFormString(formData, "style") ?? undefined,
-      paragraphCount: Number(getFormString(formData, "paragraphCount") ?? 4),
+      paragraphCount: Number(getFormString(formData, "paragraphCount") ?? 6),
       authorName: getFormString(formData, "authorName") ?? undefined,
       save: getFormString(formData, "save") === "true",
     } satisfies GeminiNewsDraftInput & { save: boolean };
