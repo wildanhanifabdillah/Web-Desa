@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Desa Keseneng Digital",
+  title: "Desa Keseneng",
   description: "Website profil dan informasi publik Desa Keseneng.",
 };
 
@@ -35,3 +35,4 @@ export default function RootLayout({
     </html>
   );
 }
+
