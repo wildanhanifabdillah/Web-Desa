@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const adminNavigationItems = [
   { label: "Dashboard", href: "/admin" },
@@ -6,7 +6,6 @@ const adminNavigationItems = [
   { label: "Perangkat", href: "/admin/perangkat" },
   { label: "Berita", href: "/admin/berita" },
   { label: "Statistik", href: "/admin/statistik" },
-  { label: "Potensi", href: "/admin/potensi" },
   { label: "Galeri", href: "/admin/galeri" },
   { label: "Transparansi", href: "/admin/transparansi" },
   { label: "Dokumen", href: "/admin/dokumen" },
@@ -39,6 +38,8 @@ export function AdminNavigation({ activeHref }: { activeHref?: string }) {
     </nav>
   );
 }
+
+
 
 
 
