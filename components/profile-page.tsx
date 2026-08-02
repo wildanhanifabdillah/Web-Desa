@@ -1,4 +1,4 @@
-﻿import type { ProfileData } from "@/lib/profile";
+import type { ProfileData } from "@/lib/profile";
 
 type ProfilePageProps = {
   profile: ProfileData;
@@ -40,7 +40,6 @@ export function ProfilePage({ profile }: ProfilePageProps) {
       </section>
 
       <ProfileOverviewSection overview={profile.overview} />
-      <HistoryTimelineSection history={profile.history} />
       <GeographySection geography={profile.geography} />
       <VisionMissionSection visionMission={profile.visionMission} />
       <VillageOfficialsSection officials={profile.officials} />
@@ -96,84 +95,46 @@ function ProfileOverviewSection({
   );
 }
 
-function HistoryTimelineSection({
-  history,
-}: {
-  history: ProfileData["history"];
-}) {
-  return (
-    <section className="bg-white px-4 py-14 sm:px-6 lg:px-8 lg:py-24">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.75fr_1.25fr]">
-        <div>
-          <p className="section-kicker">{history.kicker}</p>
-          <h2 className="mt-3 max-w-3xl text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-            {history.title}
-          </h2>
-          <p className="mt-5 text-base leading-8 text-slate-600">
-            {history.description}
-          </p>
-        </div>
-        <div className="relative grid gap-4 before:absolute before:left-5 before:top-5 before:h-[calc(100%-2.5rem)] before:w-px before:bg-sage-200 sm:before:left-6">
-          {history.timeline.map((item) => (
-            <article key={item.title} className="relative pl-12 sm:pl-16">
-              <span className="absolute left-0 top-1 flex h-9 w-9 items-center justify-center rounded-full border border-sage-200 bg-sage-100 text-sm font-semibold text-sage-800 sm:h-12 sm:w-12">
-                {item.period.slice(0, 1)}
-              </span>
-              <div className="rounded-lg border border-slate-200 bg-stone-50 p-5 shadow-sm">
-                <span className="text-sm font-semibold text-sage-700">
-                  {item.period}
-                </span>
-                <h3 className="mt-2 text-xl font-semibold text-slate-950">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {item.description}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function GeographySection({
   geography,
 }: {
   geography: ProfileData["geography"];
 }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-24">
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
-        <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <div className="grid gap-5 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+        <div>
           <p className="section-kicker">{geography.kicker}</p>
-          <h2 className="mt-3 max-w-3xl text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
+          <h2 className="mt-3 max-w-2xl text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
             {geography.title}
           </h2>
-          <p className="mt-5 text-base leading-8 text-slate-600">
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
             {geography.description}
           </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        </div>
+
+        <div className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             {geography.stats.map((item) => (
               <div
                 key={item.label}
-                className="rounded-md border border-slate-200 bg-stone-50 p-4"
+                className="rounded-md border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   {item.label}
                 </span>
-                <strong className="mt-2 block text-lg text-slate-950">
+                <strong className="mt-2 block text-base text-slate-950 sm:text-lg">
                   {item.value}
                 </strong>
               </div>
             ))}
           </div>
-          <div className="mt-6 rounded-md bg-sage-50 p-4">
+
+          <div className="rounded-md border border-sage-100 bg-sage-50 p-4">
             <h3 className="text-sm font-semibold text-sage-800">
               Batas wilayah
             </h3>
-            <dl className="mt-3 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+            <dl className="mt-3 grid gap-x-5 gap-y-3 text-sm text-slate-700 sm:grid-cols-2">
               {geography.borders.map((item) => (
                 <div key={item.label}>
                   <dt className="font-semibold text-slate-950">{item.label}</dt>
@@ -181,41 +142,6 @@ function GeographySection({
                 </div>
               ))}
             </dl>
-          </div>
-        </article>
-
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4">
-            <p className="text-sm font-semibold text-slate-950">
-              Peta Wilayah Desa Keseneng
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              Visual sederhana dusun dan batas desa sekitar.
-            </p>
-          </div>
-          <div className="relative min-h-[380px] bg-sage-50 p-4 pb-32 sm:min-h-[420px] sm:p-5 sm:pb-28">
-            <div className="absolute inset-5 rounded-lg border border-sage-200 bg-[linear-gradient(135deg,#dfeedd,#f8fafc_48%,#c4dcc0)]" />
-            <div className="absolute left-[15%] top-[18%] h-[62%] w-[70%] rounded-[28px] border-2 border-dashed border-sage-700/60 bg-white/45 backdrop-blur-sm" />
-            <div className="absolute left-[24%] top-[36%] h-3 w-[52%] rotate-[18deg] rounded-full bg-slate-300" />
-            <div className="absolute left-[46%] top-[24%] h-[52%] w-3 rotate-[10deg] rounded-full bg-slate-300" />
-            <BoundaryLabel className="left-[50%] top-[17%]" label="Utara: Desa Sojopuro" />
-            <BoundaryLabel className="left-[50%] top-[82%]" label="Selatan: Desa Lengkong" />
-            <BoundaryLabel className="left-[82%] top-[50%]" label="Timur: Desa Mudal" />
-            <MapMarker className="left-[36%] top-[36%]" label="Bugel" />
-            <MapMarker className="left-[58%] top-[62%]" label="Keseneng" />
-            <div className="absolute bottom-4 left-4 right-4 rounded-md border border-white/70 bg-white/85 p-3 backdrop-blur-md sm:bottom-5 sm:left-5 sm:right-5 sm:p-4">
-              <div className="grid gap-2 text-xs text-slate-600 sm:grid-cols-3 sm:gap-3">
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-6 rounded-full bg-slate-300" /> Jalur utama
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full border-2 border-sage-700" /> Titik dusun
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="h-3 w-6 rounded border border-dashed border-sage-700" /> Batas desa
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -309,9 +235,11 @@ function VillageOfficialsSection({
                     {getInitials(official.name)}
                   </div>
                 )}
-                <span className="rounded-md bg-sage-700 px-2.5 py-1 text-xs font-semibold text-white">
-                  {official.area}
-                </span>
+                {official.area ? (
+                  <span className="rounded-md bg-sage-700 px-2.5 py-1 text-xs font-semibold text-white">
+                    {official.area}
+                  </span>
+                ) : null}
               </div>
               <h3 className="mt-5 break-words text-lg font-semibold leading-7 sm:text-xl">
                 {official.name}
@@ -322,35 +250,16 @@ function VillageOfficialsSection({
               <p className="mt-4 flex-1 text-sm leading-6 text-slate-300">
                 {official.focus}
               </p>
-              <div className="mt-5 break-all rounded-md border border-white/10 bg-slate-950/35 px-3 py-2 text-xs text-slate-300">
-                {official.contact}
-              </div>
+              {official.contact ? (
+                <div className="mt-5 break-all rounded-md border border-white/10 bg-slate-950/35 px-3 py-2 text-xs text-slate-300">
+                  {official.contact}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
       </div>
     </section>
-  );
-}
-
-function MapMarker({ className, label }: { className: string; label: string }) {
-  return (
-    <div className={`absolute ${className}`}>
-      <div className="flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-md border border-sage-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm">
-        <span className="h-3 w-3 rounded-full bg-sage-700" />
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function BoundaryLabel({ className, label }: { className: string; label: string }) {
-  return (
-    <div className={`absolute ${className}`}>
-      <div className="-translate-x-1/2 rounded-md border border-sage-200 bg-sage-50 px-3 py-1.5 text-xs font-semibold text-sage-900 shadow-sm">
-        {label}
-      </div>
-    </div>
   );
 }
 

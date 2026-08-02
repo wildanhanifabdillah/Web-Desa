@@ -143,12 +143,12 @@ export function AdminGalleryPhotosPage({ album }: AdminGalleryPhotosPageProps) {
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sage-700">Admin Galeri</p>
             <h1 className="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">Kelola foto album</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Album: <strong>{album.title}</strong>. Tambah, edit, hapus, dan unggah foto album tanpa mengubah JSON manual.
+              Album: <strong>{album.title}</strong>. Tambah, ubah, hapus, dan unggah foto album langsung dari halaman admin.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/galeri" className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">Album</Link>
-            <Link href={`/galeri/${album.slug}`} className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">Preview publik</Link>
+            <Link href={`/galeri/${album.slug}`} className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">Lihat halaman</Link>
           </div>
         </div>
       </section>
@@ -168,7 +168,7 @@ export function AdminGalleryPhotosPage({ album }: AdminGalleryPhotosPageProps) {
               <h2 className="text-lg font-semibold">Daftar foto</h2>
               <p className="mt-1 text-sm text-slate-500">Total {photos.length} foto dalam album ini.</p>
             </div>
-            <button type="button" onClick={() => refreshPhotos().catch((error: Error) => setNotice({ type: "error", message: error.message }))} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-sage-700 hover:text-sage-800">Refresh</button>
+            <button type="button" onClick={() => refreshPhotos().catch((error: Error) => setNotice({ type: "error", message: error.message }))} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-sage-700 hover:text-sage-800">Muat ulang</button>
           </div>
           <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
             {photos.map((photo) => (
@@ -179,7 +179,7 @@ export function AdminGalleryPhotosPage({ album }: AdminGalleryPhotosPageProps) {
                   <p className="mt-2 text-sm leading-6 text-slate-600">{photo.description}</p>
                   <time className="mt-3 block text-xs font-semibold text-slate-500">{formatDate(photo.takenAt)}</time>
                   <div className="mt-4 flex gap-2">
-                    <button type="button" onClick={() => startEdit(photo)} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Edit</button>
+                    <button type="button" onClick={() => startEdit(photo)} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Ubah</button>
                     <button type="button" onClick={() => deletePhoto(photo)} className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">Hapus</button>
                   </div>
                 </div>
@@ -189,13 +189,13 @@ export function AdminGalleryPhotosPage({ album }: AdminGalleryPhotosPageProps) {
         </div>
 
         <aside className="self-start rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">{mode === "create" ? "Tambah foto" : "Edit foto"}</h2>
+          <h2 className="text-lg font-semibold">{mode === "create" ? "Tambah foto" : "Ubah foto"}</h2>
           <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
             <TextInput label="Judul" value={form.title} onChange={(value) => setForm((current) => ({ ...current, title: value }))} />
             <TextArea label="Deskripsi" value={form.description} onChange={(value) => setForm((current) => ({ ...current, description: value }))} />
             <TextInput label="Path gambar" value={form.image} onChange={(value) => setForm((current) => ({ ...current, image: value }))} />
             <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              <span>Upload gambar</span>
+              <span>Unggah gambar</span>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-sage-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
               <span className="text-xs text-slate-500">{file ? file.name : "Opsional jika path gambar sudah diisi."}</span>
             </label>
@@ -243,3 +243,4 @@ function formatDate(value: string) {
 function formatDateInputValue(value: string) {
   return value.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? value;
 }
+

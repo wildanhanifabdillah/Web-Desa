@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { TransparencyDocument } from "@/lib/transparency";
 
 type AdminTransparencyPageProps = {
@@ -59,7 +59,7 @@ export function AdminTransparencyPage({ documents }: AdminTransparencyPageProps)
               <div>
                 <h2 className="text-lg font-semibold">Daftar dokumen</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Data tiruan berikut merepresentasikan dokumen yang dikelola admin.
+                  Data admin berikut merepresentasikan dokumen yang dikelola admin.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

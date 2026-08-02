@@ -9,7 +9,7 @@ export default async function AdminDokumenPage() {
     <AdminCrudPage
       eyebrow="Admin Dokumen / Perdes"
       title="Kelola dokumen dan Perdes"
-      description="Tambah, edit, hapus, dan publikasikan Perdes atau dokumen hukum desa. PDF bisa diunggah langsung dari perangkat admin."
+      description="Tambah, ubah, hapus, dan publikasikan Perdes atau dokumen hukum desa. PDF bisa diunggah langsung dari perangkat admin."
       endpoint="/api/admin/documents"
       activeHref="/admin/dokumen"
       publicHref="/dokumen"
@@ -24,7 +24,7 @@ export default async function AdminDokumenPage() {
         { name: "fileUrl", label: "Path PDF", type: "hidden" },
         { name: "fileType", label: "Jenis file", type: "hidden", defaultValue: "PDF" },
         { name: "fileSize", label: "Ukuran file", type: "hidden", defaultValue: "1 MB" },
-        { name: "file", label: "Upload PDF", type: "file", accept: "application/pdf" },
+        { name: "file", label: "Unggah PDF", type: "file", accept: "application/pdf" },
         { name: "enactedAt", label: "Tanggal penetapan", type: "date", defaultValue: "2026-07-19", required: true },
         { name: "status", label: "Status", type: "select", defaultValue: "Berlaku", options: [
           { label: "Berlaku", value: "Berlaku" },
@@ -42,4 +42,5 @@ export default async function AdminDokumenPage() {
     />
   );
 }
+
 

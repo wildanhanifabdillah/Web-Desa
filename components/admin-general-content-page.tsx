@@ -58,7 +58,7 @@ export function AdminGeneralContentPage() {
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Susun konten lintas halaman seperti identitas website, navigasi,
-              kontak, dan ringkasan homepage dengan data tiruan.
+              kontak, dan ringkasan homepage dari data panel admin.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -114,7 +114,7 @@ export function AdminGeneralContentPage() {
                 </p>
               </div>
               <span className="rounded-md bg-sage-50 px-3 py-2 text-xs font-semibold text-sage-800">
-                Data tiruan
+                Data admin
               </span>
             </div>
 

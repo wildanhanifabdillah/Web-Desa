@@ -8,7 +8,7 @@ INSERT INTO data_statistik (
   display_order,
   is_featured
 ) VALUES
-  ('7fb974d5-8f94-4df6-98f0-1038f4fc5f5a', 'Kependudukan', 'Penduduk', 4210, 'jiwa', 'Estimasi jumlah penduduk yang tercatat dalam data awal desa.', 1, TRUE),
+  ('7fb974d5-8f94-4df6-98f0-1038f4fc5f5a', 'Kependudukan', 'Penduduk', 4210, 'jiwa', 'Jumlah penduduk yang tercatat dalam data desa.', 1, TRUE),
   ('d7c78c32-1e85-4f17-92e2-2a697d8a1b01', 'Kependudukan', 'Kepala Keluarga', 1286, 'KK', 'Jumlah kepala keluarga sebagai basis layanan administrasi.', 2, TRUE),
   ('2df89b48-25f5-47db-8c0e-84b4c9ce7a01', 'Kewilayahan', 'Dusun', 6, 'dusun', 'Wilayah dusun yang menjadi cakupan pelayanan Desa Keseneng.', 3, TRUE),
   ('df56c9a1-5f26-4c27-b4f8-5e9cb8b21c11', 'Kewilayahan', 'RT/RW', 34, 'unit', 'Gabungan unit RT dan RW dalam struktur kewilayahan desa.', 4, TRUE)
@@ -35,9 +35,9 @@ INSERT INTO statistic_sections (
   display_order,
   status
 ) VALUES
-  ('b201f79c-74d7-49e2-b3a8-7104229e1001', 'usia', 'Komposisi Usia', 'Sebaran penduduk berdasarkan kelompok usia untuk membantu membaca kebutuhan layanan pendidikan, produktivitas, dan sosial.', 'Total penduduk', 4210, 'jiwa', 'bar', 'Data awal Desa Keseneng', '2026', 1, 'published'),
-  ('b201f79c-74d7-49e2-b3a8-7104229e1002', 'pendidikan', 'Tingkat Pendidikan', 'Data tiruan tingkat pendidikan warga sebagai gambaran awal kebutuhan program literasi dan pelatihan.', 'Warga terdata', 3510, 'orang', 'bar', 'Data awal Desa Keseneng', '2026', 2, 'published'),
-  ('b201f79c-74d7-49e2-b3a8-7104229e1003', 'pekerjaan', 'Mata Pencaharian', 'Sebaran pekerjaan utama warga yang mendukung arah pengembangan ekonomi dan potensi desa.', 'Warga bekerja', 2460, 'orang', 'bar', 'Data awal Desa Keseneng', '2026', 3, 'published')
+  ('b201f79c-74d7-49e2-b3a8-7104229e1001', 'usia', 'Komposisi Usia', 'Sebaran penduduk berdasarkan kelompok usia untuk membantu membaca kebutuhan layanan pendidikan, produktivitas, dan sosial.', 'Total penduduk', 4210, 'jiwa', 'bar', 'Data Desa Keseneng', '2026', 1, 'published'),
+  ('b201f79c-74d7-49e2-b3a8-7104229e1002', 'pendidikan', 'Tingkat Pendidikan', 'Sebaran tingkat pendidikan warga sebagai gambaran kebutuhan program literasi dan pelatihan.', 'Warga terdata', 3510, 'orang', 'bar', 'Data Desa Keseneng', '2026', 2, 'published'),
+  ('b201f79c-74d7-49e2-b3a8-7104229e1003', 'pekerjaan', 'Mata Pencaharian', 'Sebaran pekerjaan utama warga yang mendukung arah pengembangan ekonomi dan potensi desa.', 'Warga bekerja', 2460, 'orang', 'bar', 'Data Desa Keseneng', '2026', 3, 'published')
 ON DUPLICATE KEY UPDATE
   slug = VALUES(slug),
   title = VALUES(title),

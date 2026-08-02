@@ -28,7 +28,7 @@ const statisticsOverview: StatisticMetric[] = [
     label: "Penduduk",
     value: 4210,
     unit: "jiwa",
-    description: "Estimasi jumlah penduduk yang tercatat dalam data awal desa.",
+    description: "Jumlah penduduk yang tercatat dalam data desa.",
   },
   {
     id: "kepala-keluarga",
@@ -73,7 +73,7 @@ const statisticSections: StatisticSection[] = [
     id: "pendidikan",
     title: "Tingkat Pendidikan",
     description:
-      "Data tiruan tingkat pendidikan warga sebagai gambaran awal kebutuhan program literasi dan pelatihan.",
+      "Sebaran tingkat pendidikan warga sebagai gambaran kebutuhan program literasi dan pelatihan.",
     totalLabel: "Warga terdata",
     totalValue: 3510,
     unit: "orang",

@@ -29,9 +29,9 @@ const initialGeographyRecords: ProfileGeographyRecord[] = [
       { label: "Dominasi lahan", value: "Sawah dan kebun" },
     ],
     borders: [
-      { label: "Utara", value: "Desa Sojopuro" },
+      { label: "Utara", value: "Desa Lengkong" },
       { label: "Timur", value: "Desa Mudal" },
-      { label: "Selatan", value: "Desa Lengkong" },
+      { label: "Selatan", value: "Desa Sojopuro" },
       { label: "Barat", value: "Akses wilayah dan lahan warga Desa Keseneng dan Gunung Kembang" },
     ],
     updatedAt: "2026-07-12T00:00:00.000Z",

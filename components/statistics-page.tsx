@@ -1,11 +1,21 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import type { StatisticChartItem, StatisticMetric, StatisticSection } from "@/lib/statistics";
 
 type StatisticsPageProps = {
-  overview: StatisticMetric[];
-  sections: StatisticSection[];
+  overview: PublicStatisticMetric[];
+  sections: PublicStatisticSection[];
+};
+
+type PublicStatisticMetric = StatisticMetric & {
+  sourceName?: string;
+  periodLabel?: string;
+};
+
+type PublicStatisticSection = StatisticSection & {
+  sourceName?: string;
+  periodLabel?: string;
 };
 
 type ActiveBar = {
@@ -18,37 +28,15 @@ export function StatisticsPage({ overview, sections }: StatisticsPageProps) {
   const [activeSectionId, setActiveSectionId] = useState(sections[0]?.id ?? "");
   const activeSection =
     sections.find((section) => section.id === activeSectionId) ?? sections[0];
+  const sourceName = getFirstText([
+    ...overview.map((metric) => metric.sourceName),
+    ...sections.map((section) => section.sourceName),
+  ]);
+  const periodLabel = getFirstText([
+    ...overview.map((metric) => metric.periodLabel),
+    ...sections.map((section) => section.periodLabel),
+  ]);
 
-  function downloadCsv() {
-    const rows = [
-      ["jenis", "kategori", "label", "nilai", "satuan"],
-      ...overview.map((metric) => [
-        "ringkasan",
-        "Ringkasan Utama",
-        metric.label,
-        metric.value.toString(),
-        metric.unit,
-      ]),
-      ...sections.flatMap((section) =>
-        section.items.map((item) => [
-          "grafik",
-          section.title,
-          item.label,
-          item.value.toString(),
-          section.unit,
-        ]),
-      ),
-    ];
-    const csv = rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "statistik-desa-keseneng.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
 
   return (
     <main className="bg-stone-50 text-slate-950">
@@ -64,17 +52,19 @@ export function StatisticsPage({ overview, sections }: StatisticsPageProps) {
               Data kependudukan dan sosial Desa Keseneng dalam tampilan ringkas.
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-100 sm:text-lg">
-              Halaman statistik menyajikan data tiruan untuk membaca komposisi
-              warga, pendidikan, pekerjaan, dan cakupan wilayah desa secara
-              visual.
+              Halaman statistik menyajikan data kependudukan, pendidikan,
+              pekerjaan, dan cakupan wilayah desa berdasarkan data yang
+              diterbitkan pengelola desa.
             </p>
+            <DataSource sourceName={sourceName} periodLabel={periodLabel} variant="hero" />
           </div>
           <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/20 bg-white/10 p-3 backdrop-blur-md sm:p-4">
             {overview.slice(0, 4).map((metric) => (
               <HeroMetric
                 key={metric.id}
                 value={formatNumber(metric.value)}
-                label={metric.unit}
+                label={metric.label}
+                unit={metric.unit}
               />
             ))}
           </div>
@@ -121,14 +111,8 @@ export function StatisticsPage({ overview, sections }: StatisticsPageProps) {
               <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
                 Grafik sederhana untuk membandingkan kelompok data utama.
               </h2>
+              <DataSource sourceName={sourceName} periodLabel={periodLabel} variant="section" />
             </div>
-            <button
-              type="button"
-              className="inline-flex h-11 w-full items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition-colors hover:bg-sage-800 sm:w-auto"
-              onClick={downloadCsv}
-            >
-              Unduh CSV
-            </button>
           </div>
           <div className="mt-8 rounded-lg border border-slate-200 bg-stone-50 p-3 shadow-sm">
             <div className="hidden gap-2 md:flex" role="tablist" aria-label="Kategori statistik">
@@ -178,7 +162,7 @@ export function StatisticsPage({ overview, sections }: StatisticsPageProps) {
   );
 }
 
-function StatisticChart({ section }: { section: StatisticSection }) {
+function StatisticChart({ section }: { section: PublicStatisticSection }) {
   const [activeBar, setActiveBar] = useState<ActiveBar | null>(null);
   const maxValue = Math.max(...section.items.map((item) => item.value));
 
@@ -203,6 +187,11 @@ function StatisticChart({ section }: { section: StatisticSection }) {
       <p className="mt-4 text-sm leading-7 text-slate-600">
         {section.description}
       </p>
+      <DataSource
+        sourceName={section.sourceName}
+        periodLabel={section.periodLabel}
+        variant="chart"
+      />
       <div className="relative mt-6 grid gap-4">
         {activeBar ? (
           <div className="pointer-events-none absolute right-0 top-0 z-10 max-w-[14rem] rounded-md border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
@@ -276,15 +265,38 @@ function InteractiveBar({
   );
 }
 
-function escapeCsvCell(value: string) {
-  return `"${value.replaceAll("\"", "\"\"")}"`;
+function DataSource({
+  sourceName,
+  periodLabel,
+  variant,
+}: {
+  sourceName?: string;
+  periodLabel?: string;
+  variant: "hero" | "section" | "chart";
+}) {
+  if (!sourceName && !periodLabel) {
+    return null;
+  }
+
+  const text = [
+    sourceName ? `Sumber: ${sourceName}` : null,
+    periodLabel ? `Periode: ${periodLabel}` : null,
+  ].filter(Boolean).join(" - ");
+  const className = variant === "hero"
+    ? "mt-5 text-sm font-medium text-slate-200"
+    : variant === "section"
+      ? "mt-4 text-sm font-medium text-slate-500"
+      : "mt-3 text-xs font-medium text-slate-500";
+
+  return <p className={className}>{text}</p>;
 }
 
-function HeroMetric({ value, label }: { value: string; label: string }) {
+function HeroMetric({ value, label, unit }: { value: string; label: string; unit: string }) {
   return (
     <div className="rounded-md border border-white/15 bg-white/10 p-4">
       <strong className="block text-2xl font-semibold">{value}</strong>
-      <span className="mt-1 block text-sm text-slate-200">{label}</span>
+      <span className="mt-1 block text-sm font-semibold text-white">{label}</span>
+      <span className="mt-0.5 block text-xs text-slate-200">{unit}</span>
     </div>
   );
 }
@@ -293,5 +305,6 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("id-ID").format(value);
 }
 
-
-
+function getFirstText(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim())?.trim();
+}

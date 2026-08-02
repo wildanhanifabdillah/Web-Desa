@@ -23,7 +23,7 @@ const initialVisionMissionRecords: ProfileVisionMissionRecord[] = [
     visionTitle:
       "Terwujudnya Desa Keseneng yang maju, terbuka, mandiri, dan berdaya melalui potensi lokal.",
     visionDescription:
-      "Visi dan misi ini memakai data tiruan untuk memandu desain halaman, sehingga admin nantinya tinggal mengganti konten resmi desa.",
+      "Visi dan misi ini menampilkan arah pembangunan desa yang dikelola melalui panel admin.",
     missions: [
       {
         focus: "Pelayanan Publik",

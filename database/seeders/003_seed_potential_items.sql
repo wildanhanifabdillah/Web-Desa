@@ -1,4 +1,4 @@
--- Seeder item contoh Potensi Desa Keseneng.
+-- Seeder item awal Potensi Desa Keseneng.
 -- Jalankan setelah seeder kategori potensi.
 INSERT INTO potential_items (id, category_id, title, slug, summary, description, image_url, image_alt, status, published_at, display_order) VALUES
   ('cbef4cf6-4f02-4b88-9d5b-483d3b4f0801', 'b1c7c2dd-8f56-4b46-8d8a-8c1f701c0601', 'Hamparan sawah produktif', 'hamparan-sawah-produktif', 'Area pertanian warga yang menjadi sumber pangan utama.', 'Area pertanian warga yang menjadi sumber pangan utama dan potensi utama Desa Keseneng.', 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80', 'Hamparan sawah produktif Desa Keseneng', 'published', '2026-07-10 08:00:00', 1),

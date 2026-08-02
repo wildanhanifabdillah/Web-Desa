@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
 import { AdminNavigation } from "@/components/admin-navigation";
 
 export type AdminCrudField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "date" | "textarea" | "select" | "hidden" | "file";
+  type?: "text" | "number" | "date" | "textarea" | "select" | "checkbox-group" | "hidden" | "file";
   required?: boolean;
   options?: Array<{ label: string; value: string }>;
   defaultValue?: string;
@@ -31,6 +31,7 @@ export type AdminCrudPageProps = {
   updateDefaults?: Record<string, unknown>;
   deleteExtraQuery?: Record<string, string>;
   rowActions?: Array<{ label: string; hrefTemplate: string }>;
+  subNavigation?: Array<{ label: string; href: string }>;
   activeHref?: string;
   enableNewsAiDraft?: boolean;
 };
@@ -62,6 +63,7 @@ export function AdminCrudPage({
   updateDefaults = {},
   deleteExtraQuery = {},
   rowActions = [],
+  subNavigation = [],
   activeHref,
   enableNewsAiDraft = false,
 }: AdminCrudPageProps) {
@@ -81,13 +83,13 @@ export function AdminCrudPage({
   const publishedCount = rows.filter((row) => isPublishedStatus(row.status)).length;
   const archivedCount = rows.filter((row) => isArchivedStatus(row.status)).length;
   const draftCount = rows.length - publishedCount - archivedCount;
-  const modalTitle = mode === "create" ? "Tambah data" : "Edit data";
+  const modalTitle = mode === "create" ? "Tambah baru" : "Ubah data";
 
   const metricSummary = useMemo(
     () => [
-      { label: "Total data", value: rows.length.toString() },
-      { label: "Publik/aktif", value: publishedCount.toString() },
-      { label: "Draf", value: draftCount.toString() },
+      { label: "Semua", value: rows.length.toString() },
+      { label: "Tampil di website", value: publishedCount.toString() },
+      { label: "Belum tampil", value: draftCount.toString() },
       { label: "Arsip", value: archivedCount.toString() },
     ],
     [archivedCount, draftCount, publishedCount, rows.length],
@@ -181,7 +183,7 @@ export function AdminCrudPage({
     const key = String(deleteTarget[idField] ?? deleteTarget.slug ?? "");
     try {
       const params = new URLSearchParams({ [deleteParam]: key, ...deleteExtraQuery });
-      const response = await fetch(`${endpoint}?${params.toString()}`, { method: "DELETE" });
+      const response = await fetch(buildUrlWithParams(endpoint, params), { method: "DELETE" });
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -207,21 +209,45 @@ export function AdminCrudPage({
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/admin" className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">
-              Dashboard
+              Dasbor
             </Link>
             {publicHref ? (
               <Link href={publicHref} className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">
-                Preview publik
+                Lihat halaman
               </Link>
             ) : null}
             <button type="button" onClick={startCreate} className="inline-flex h-10 items-center justify-center rounded-md bg-sage-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-sage-800">
-              Tambah data
+              Tambah baru
             </button>
           </div>
         </div>
       </section>
 
       <AdminNavigation activeHref={activeHref} />
+
+      {subNavigation.length > 0 ? (
+        <nav className="border-b border-slate-200 bg-slate-50 px-4 sm:px-6 lg:px-8" aria-label="Submenu admin">
+          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto py-3">
+            {subNavigation.map((item) => {
+              const isActive = activeHref === item.href || activeHref?.startsWith(`${item.href}/`);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold ${
+                    isActive
+                      ? "bg-slate-950 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 transition-colors hover:border-sage-700 hover:text-sage-800"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      ) : null}
 
       {notice ? (
         <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:px-8">
@@ -241,11 +267,11 @@ export function AdminCrudPage({
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Daftar data</h2>
-              <p className="mt-1 text-sm text-slate-500">Pilih tambah, edit, atau hapus data dari tabel berikut.</p>
+              <h2 className="text-lg font-semibold">Data yang sudah tersimpan</h2>
+              <p className="mt-1 text-sm text-slate-500">Gunakan tombol Ubah atau Hapus pada baris data yang ingin dikelola.</p>
             </div>
             <button type="button" onClick={() => refreshRows().catch((error: Error) => setNotice({ type: "error", message: error.message }))} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-sage-700 hover:text-sage-800">
-              Refresh
+              Muat ulang
             </button>
           </div>
 
@@ -260,7 +286,7 @@ export function AdminCrudPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {rows.map((row, index) => (
+                {rows.length > 0 ? rows.map((row, index) => (
                   <tr key={String(row[idField] ?? row.slug ?? index)} className="align-top">
                     {tableColumns.map((column) => (
                       <td key={column.key} className="px-5 py-4 text-slate-700">{formatCell(row[column.key])}</td>
@@ -268,7 +294,7 @@ export function AdminCrudPage({
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-2">
                         <button type="button" onClick={() => startEdit(row)} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white">
-                          Edit
+                          Ubah
                         </button>
                         {rowActions.map((action) => (
                           <Link key={action.label} href={buildRowActionHref(action.hrefTemplate, row)} className="rounded-md border border-sage-200 bg-sage-50 px-3 py-2 text-xs font-semibold text-sage-800 transition-colors hover:border-sage-300 hover:bg-sage-100">
@@ -281,7 +307,13 @@ export function AdminCrudPage({
                       </div>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={tableColumns.length + 1} className="px-5 py-10 text-center text-sm text-slate-500">
+                      Belum ada data. Tekan tombol Tambah baru untuk membuat data pertama.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -294,9 +326,9 @@ export function AdminCrudPage({
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
               <div>
                 <h2 className="text-xl font-semibold text-slate-950">{modalTitle}</h2>
-                <p className="mt-1 text-sm leading-6 text-slate-500">Lengkapi data, lalu simpan perubahan.</p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">Isi data yang diperlukan, lalu tekan tombol simpan.</p>
               </div>
-              <button type="button" onClick={closeForm} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 text-lg font-semibold text-slate-700 transition-colors hover:border-sage-700 hover:text-sage-800" aria-label="Tutup modal">
+              <button type="button" onClick={closeForm} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 text-lg font-semibold text-slate-700 transition-colors hover:border-sage-700 hover:text-sage-800" aria-label="Tutup form">
                 x
               </button>
             </div>
@@ -318,7 +350,7 @@ export function AdminCrudPage({
                         authorName: draft.authorName,
                         status: "draft",
                       }));
-                      setNotice({ type: "success", message: "Draft AI berhasil dibuat. Silakan tinjau dan edit sebelum disimpan." });
+                      setNotice({ type: "success", message: "Teks berita berhasil dibuat. Silakan cek dan ubah sebelum disimpan." });
                     }}
                     onError={(message) => setNotice({ type: "error", message })}
                   />
@@ -363,13 +395,13 @@ export function AdminCrudPage({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
           <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-lg border border-red-100 bg-white p-5 shadow-xl">
             <h2 className="text-xl font-semibold text-slate-950">Hapus {getRowLabel(deleteTarget)}?</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Data ini akan dihapus dari daftar admin dan halaman publik terkait.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Data ini akan dihapus dari daftar. Pastikan data sudah tidak diperlukan.</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => setDeleteTarget(null)} className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800">
-                Batalkan
+                Batal
               </button>
               <button type="button" onClick={confirmDelete} className="inline-flex h-11 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-700">
-                Ya, hapus
+                Hapus data
               </button>
             </div>
           </div>
@@ -407,8 +439,8 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        console.error("Draft AI error", { status: response.status, payload });
-        throw new Error(payload?.error ?? `Draft AI gagal dibuat. HTTP ${response.status}`);
+        console.error("News draft error", { status: response.status, payload });
+        throw new Error(payload?.error ?? `Teks berita gagal dibuat. HTTP ${response.status}`);
       }
 
       onApply({
@@ -420,7 +452,7 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
         authorName: payload.data.authorName ?? form.authorName,
       });
     } catch (error) {
-      onError(error instanceof Error ? error.message : "Draft AI gagal dibuat.");
+      onError(error instanceof Error ? error.message : "Teks berita gagal dibuat.");
     } finally {
       setIsGenerating(false);
     }
@@ -429,8 +461,8 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
   return (
     <section className="rounded-lg border border-sage-200 bg-sage-50 p-5">
       <div>
-        <h3 className="text-lg font-semibold text-slate-950">Buat draft AI</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-600">Isi fakta utama, lalu Gemini akan membuat draft berita yang tetap bisa diedit sebelum disimpan.</p>
+        <h3 className="text-lg font-semibold text-slate-950">Bantu tulis berita</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-600">Isi fakta utama, lalu sistem akan membuat teks berita yang masih bisa diedit sebelum disimpan.</p>
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -449,7 +481,7 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
           <TextArea label="Data/kutipan" value={form.supportingData} onChange={(value) => setForm((current) => ({ ...current, supportingData: value }))} placeholder="Opsional, misalnya jumlah peserta atau kutipan narasumber." />
         </div>
         <button type="button" onClick={handleGenerate} disabled={isGenerating} className="inline-flex h-11 items-center justify-center rounded-md bg-sage-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-sage-800 disabled:cursor-wait disabled:bg-slate-400 sm:col-span-2">
-          {isGenerating ? "Membuat draft..." : "Buat draft dengan Gemini"}
+          {isGenerating ? "Menulis berita..." : "Buat teks berita otomatis"}
         </button>
       </div>
     </section>
@@ -474,6 +506,7 @@ function CrudInput({
   onClearStoredFile: () => void;
 }) {
   const isWide = field.type === "textarea" || field.type === "file";
+  const fileInputId = useId();
 
   return (
     <div className={isWide ? "sm:col-span-2" : undefined}>
@@ -484,9 +517,36 @@ function CrudInput({
         <select className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-sage-700" value={value} onChange={(event) => onChange(event.target.value)} required={field.required}>
           {(field.options ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
+      ) : field.type === "checkbox-group" ? (
+        <div className="mt-2 grid gap-2 rounded-md border border-slate-300 bg-white p-3">
+          {(field.options ?? []).map((option) => {
+            const selectedValues = splitMultiValue(value);
+            const checked = selectedValues.includes(option.value);
+
+            return (
+              <label key={option.value} className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(event) => {
+                    const nextValues = event.target.checked
+                      ? [...selectedValues, option.value]
+                      : selectedValues.filter((item) => item !== option.value);
+
+                    onChange(nextValues.join(","));
+                  }}
+                />
+                {option.label}
+              </label>
+            );
+          })}
+        </div>
       ) : field.type === "file" ? (
         <div className="mt-2 grid gap-2">
-          <input type="file" accept={field.accept} multiple={field.multiple} className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-sage-700 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" onChange={(event) => onFileChange(Array.from(event.target.files ?? []))} required={field.required} />
+          <input id={fileInputId} type="file" accept={field.accept} multiple={field.multiple} className="sr-only" onChange={(event) => onFileChange(Array.from(event.target.files ?? []))} required={field.required} />
+          <label htmlFor={fileInputId} className="inline-flex h-11 cursor-pointer items-center justify-center rounded-md border border-sage-700 bg-sage-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-sage-800 sm:w-fit">
+            Pilih file
+          </label>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <span>{getFileStatusText(field, storedValue, file)}</span>
             {storedValue ? (
@@ -595,7 +655,11 @@ function clearStoredFileValue(field: AdminCrudField, values: Record<string, stri
 function buildInitialValues(fields: AdminCrudField[], row: Record<string, unknown> | null) {
   return Object.fromEntries(fields.map((field) => {
     const rawValue = row?.[field.name] ?? field.defaultValue ?? "";
-    const value = field.type === "date" ? formatDateInputValue(rawValue) : String(rawValue);
+    const value = field.type === "date"
+      ? formatDateInputValue(rawValue)
+      : field.type === "checkbox-group" && Array.isArray(rawValue)
+        ? rawValue.join(",")
+        : String(rawValue);
 
     return [field.name, value];
   })) as Record<string, string>;
@@ -605,7 +669,14 @@ function buildPayload(fields: AdminCrudField[], values: Record<string, string>) 
   return Object.fromEntries(fields.filter((field) => field.type !== "file").map((field) => {
     const value = values[field.name] ?? field.defaultValue ?? "";
 
-    return [field.name, field.type === "number" ? Number(value) : value];
+    return [
+      field.name,
+      field.type === "number"
+        ? Number(value)
+        : field.type === "checkbox-group"
+          ? splitMultiValue(value)
+          : value,
+    ];
   }));
 }
 
@@ -635,6 +706,12 @@ function buildRequestInit(method: "POST" | "PUT", payload: Record<string, unknow
   return { method, body: formData };
 }
 
+function buildUrlWithParams(endpoint: string, params: URLSearchParams) {
+  const separator = endpoint.includes("?") ? "&" : "?";
+
+  return `${endpoint}${separator}${params.toString()}`;
+}
+
 function extractRows(payload: unknown, dataPath: string[]) {
   let current: unknown = payload;
 
@@ -645,6 +722,10 @@ function extractRows(payload: unknown, dataPath: string[]) {
   return Array.isArray(current) ? current as Array<Record<string, unknown>> : [];
 }
 
+function splitMultiValue(value: string) {
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
 function formatCell(value: unknown) {
   if (value === null || value === undefined || value === "") {
     return "-";
@@ -652,6 +733,10 @@ function formatCell(value: unknown) {
 
   if (typeof value === "number") {
     return value.toLocaleString("id-ID");
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.join(", ") : "-";
   }
 
   if (typeof value === "string") {
@@ -693,10 +778,13 @@ function formatAdminStatus(value: string) {
 
 function formatKnownSlug(value: string) {
   const labels: Record<string, string> = {
-    pertanian: "Pertanian",
-    kesenian: "Kesenian",
+    "wisata-alam": "Wisata Alam",
+    "agro-tourism": "Agro Tourism",
     umkm: "UMKM",
-    peternakan: "Peternakan",
+    "seni-budaya": "Seni & Budaya",
+    pertanian: "Agro Tourism",
+    kesenian: "Seni & Budaya",
+    peternakan: "Wisata Alam",
     pemerintahan: "Pemerintahan",
     kesehatan: "Kesehatan",
     pendidikan: "Pendidikan",
@@ -745,6 +833,9 @@ function getRowLabel(row: Record<string, unknown>) {
 function buildRowActionHref(template: string, row: Record<string, unknown>) {
   return template.replace(/:([a-zA-Z0-9_]+)/g, (_match, key: string) => encodeURIComponent(String(row[key] ?? "")));
 }
+
+
+
 
 
 

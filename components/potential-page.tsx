@@ -26,16 +26,14 @@ export function PotentialPage({ categories }: PotentialPageProps) {
               Kategori potensi Desa Keseneng yang siap dikembangkan.
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-100 sm:text-lg">
-              Jelajahi kelompok potensi unggulan desa mulai dari pertanian,
-              kesenian, UMKM, sampai peternakan warga dalam susunan yang mudah
-              dipindai.
+              Jelajahi potensi unggulan desa mulai dari wisata alam, agro tourism, UMKM, sampai seni budaya dalam susunan yang mudah dipindai.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/20 bg-white/10 p-3 backdrop-blur-md sm:p-4">
             <HeroMetric value={categories.length.toString()} label="kategori" />
             <HeroMetric value={totalHighlights.toString()} label="fokus potensi" />
             <HeroMetric value="6" label="dusun terhubung" />
-            <HeroMetric value="2026" label="data awal" />
+            <HeroMetric value="Admin" label="sumber data" />
           </div>
         </div>
       </section>
@@ -104,7 +102,7 @@ export function PotentialPage({ categories }: PotentialPageProps) {
                   </div>
                   <div className="mt-auto pt-6">
                     <Link
-                      href={`/potensi/${category.slug}`}
+                      href={getCategoryHref(category)}
                       className="inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition-colors hover:bg-sage-800"
                     >
                       Buka detail
@@ -155,8 +153,7 @@ function PotentialGallerySection({
               Dokumentasi visual tiap kategori potensi Desa Keseneng.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Galeri ini memakai data tiruan agar pola tampilan foto, judul,
-              dan deskripsi siap dipakai saat konten resmi dimasukkan.
+              Galeri ini menampilkan dokumentasi potensi yang dikelola melalui panel admin desa.
             </p>
           </div>
           <div className="self-start rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-slate-200 backdrop-blur-md">
@@ -179,7 +176,7 @@ function PotentialGallerySection({
                   </h3>
                 </div>
                 <Link
-                  href={`/potensi/${category.slug}`}
+                  href={getCategoryHref(category)}
                   className="inline-flex h-10 items-center rounded-md border border-white/20 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   Halaman detail
@@ -201,6 +198,14 @@ function PotentialGallerySection({
     </section>
   );
 }
+function getCategoryHref(category: PotentialCategory) {
+  const normalized = `${category.slug} ${category.label} ${category.title}`.toLowerCase();
+
+  return normalized.includes("seni") || normalized.includes("budaya") || normalized.includes("kesenian")
+    ? "/potensi/seni-budaya"
+    : `/potensi/${category.slug}`;
+}
+
 function HeroMetric({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-md border border-white/15 bg-white/10 p-4">

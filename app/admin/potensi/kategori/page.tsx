@@ -9,9 +9,15 @@ export default async function AdminPotensiKategoriPage() {
     <AdminCrudPage
       eyebrow="Admin Potensi Desa"
       title="Kelola kategori potensi"
-      description="Tambah, edit, dan hapus kategori potensi desa. Gambar kategori diunggah langsung dari perangkat admin."
+      description="Tambah, ubah, dan hapus kategori potensi desa. Gambar kategori diunggah langsung dari perangkat admin."
       endpoint="/api/admin/potentials/categories"
       activeHref="/admin/potensi/kategori"
+      subNavigation={[
+        { label: "Wisata Alam", href: "/admin/potensi?category=wisata-alam" },
+        { label: "Agro Tourism", href: "/admin/potensi?category=agro-tourism" },
+        { label: "UMKM", href: "/admin/potensi?category=umkm" },
+        { label: "Seni & Budaya", href: "/admin/potensi/seni-budaya" },
+      ]}
       publicHref="/potensi"
       idField="slug"
       deleteParam="slug"
@@ -35,8 +41,8 @@ export default async function AdminPotensiKategoriPage() {
         { name: "slug", label: "Slug", type: "hidden" },
         { name: "title", label: "Judul", required: true },
         { name: "summary", label: "Ringkasan", type: "textarea", required: true },
-        { name: "image", label: "Path gambar", type: "hidden", defaultValue: "/images/potensi/pertanian-sawah.jpg" },
-        { name: "file", label: "Upload gambar", type: "file", accept: "image/jpeg,image/png,image/webp" },
+        { name: "image", label: "Path gambar", type: "hidden", defaultValue: "/images/potensi/wisata-alam.jpg" },
+        { name: "file", label: "Unggah gambar", type: "file", accept: "image/jpeg,image/png,image/webp" },
       ]}
       tableColumns={[
         { key: "label", label: "Kategori" },
@@ -46,6 +52,7 @@ export default async function AdminPotensiKategoriPage() {
     />
   );
 }
+
 
 
 

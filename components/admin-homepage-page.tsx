@@ -62,12 +62,12 @@ export function AdminHomepagePage({ initialHero, initialProfileSummary }: AdminH
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sage-700">Admin Homepage</p>
             <h1 className="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">Kelola konten halaman utama</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Ubah hero dan ringkasan profil yang tampil di beranda publik. Perubahan disimpan ke storage lokal dan dibaca ulang oleh API homepage.
+              Ubah hero dan ringkasan profil yang tampil di beranda publik. Perubahan akan tampil di beranda setelah disimpan.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/admin" className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">Dashboard</Link>
-            <Link href="/" className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">Preview publik</Link>
+            <Link href="/" className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800">Lihat halaman</Link>
           </div>
         </div>
       </section>
@@ -92,7 +92,7 @@ export function AdminHomepagePage({ initialHero, initialProfileSummary }: AdminH
             <TextInput label="Eyebrow" value={hero.eyebrow} onChange={(value) => setHero((current) => ({ ...current, eyebrow: value }))} />
             <TextArea label="Judul" value={hero.title} rows={3} onChange={(value) => setHero((current) => ({ ...current, title: value }))} />
             <TextArea label="Subtitle" value={hero.subtitle} rows={5} onChange={(value) => setHero((current) => ({ ...current, subtitle: value }))} />
-            <ImageUploadInput label="Upload gambar hero" currentValue={hero.imageUrl} file={heroFile} onFileChange={setHeroFile} />
+            <ImageUnggahInput label="Unggah gambar hero" currentValue={hero.imageUrl} file={heroFile} onFileChange={setHeroFile} />
             <TextInput label="Deskripsi gambar" value={hero.imageAlt} onChange={(value) => setHero((current) => ({ ...current, imageAlt: value }))} />
             <div className="grid gap-3 sm:grid-cols-2">
               <TextInput label="CTA utama" value={hero.primaryCta.label} onChange={(value) => setHero((current) => ({ ...current, primaryCta: { ...current.primaryCta, label: value } }))} />
@@ -178,7 +178,7 @@ async function saveSection<T>(section: "hero" | "profileSummary", data: T) {
   return payload.data as T;
 }
 
-function ImageUploadInput({
+function ImageUnggahInput({
   label,
   currentValue,
   file,
@@ -230,6 +230,7 @@ function TextArea({ label, value, rows, onChange }: { label: string; value: stri
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Data homepage gagal disimpan.";
 }
+
 
 
 

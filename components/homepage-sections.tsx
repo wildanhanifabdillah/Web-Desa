@@ -150,11 +150,12 @@ export async function StatisticsSection() {
 
 export async function PotentialSection() {
   const { data: categories } = await fetchPublicApi<ApiResponse<PotentialCategory[]>>("/api/potentials/categories");
-  const potentials = categories.slice(0, 3).map((category) => ({
+  const potentials = categories.slice(0, 4).map((category) => ({
     label: category.label,
     title: category.title,
     description: category.summary,
     image: category.image,
+    href: getPotentialHref(category),
   }));
 
   return (
@@ -166,18 +167,13 @@ export async function PotentialSection() {
             Unggulan yang siap diperkenalkan lebih luas.
           </h2>
         </div>
-        <Link
-          href="/potensi"
-          className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800"
-        >
-          Semua Potensi
-        </Link>
       </div>
-      <div className="mt-8 grid gap-5 lg:grid-cols-3">
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {potentials.map((item) => (
-          <article
+          <Link
             key={item.title}
-            className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            href={item.href}
+            className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:border-sage-700"
           >
             <div
               className="h-48 bg-cover bg-center"
@@ -195,11 +191,19 @@ export async function PotentialSection() {
                 {item.description}
               </p>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </section>
   );
+}
+
+function getPotentialHref(category: PotentialCategory) {
+  const normalized = `${category.slug} ${category.label} ${category.title}`.toLowerCase();
+
+  return normalized.includes("seni") || normalized.includes("budaya") || normalized.includes("kesenian")
+    ? "/potensi/seni-budaya"
+    : `/potensi/${category.slug}`;
 }
 
 export async function LatestNewsSection() {
@@ -285,6 +289,7 @@ function formatShortDate(value: string) {
     year: "numeric",
   }).format(new Date(value));
 }
+
 
 
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -30,16 +30,16 @@ const fallbackSettings: Pick<SiteSettings, "brand" | "header"> = {
 };
 
 const fallbackPotentialItems = [
-  { label: "Semua Potensi", href: "/potensi" },
-  { label: "Pertanian", href: "/potensi/pertanian" },
-  { label: "Kesenian", href: "/potensi/kesenian" },
-  { label: "Peternakan", href: "/potensi/peternakan" },
+  { label: "Wisata Alam", href: "/potensi/wisata-alam" },
+  { label: "Agro Tourism", href: "/potensi/agro-tourism" },
   { label: "UMKM", href: "/potensi/umkm" },
+  { label: "Seni & Budaya", href: "/potensi/seni-budaya" },
 ];
 
 export function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobilePotentialOpen, setIsMobilePotentialOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState(fallbackSettings);
   const [potentialItems, setPotentialItems] = useState(fallbackPotentialItems);
 
@@ -92,13 +92,10 @@ export function SiteHeader() {
       const categories = payload.data ?? [];
 
       if (categories.length > 0) {
-        setPotentialItems([
-          fallbackPotentialItems[0],
-          ...categories.map((category) => ({
-            label: category.label,
-            href: `/potensi/${category.slug}`,
-          })),
-        ]);
+        setPotentialItems(categories.map((category) => ({
+          label: category.label,
+          href: getPotentialHref(category),
+        })));
       }
     }
 
@@ -204,7 +201,10 @@ export function SiteHeader() {
             }`}
             aria-label="Buka menu navigasi"
             aria-expanded={isMenuOpen}
-            onClick={() => setIsMenuOpen((current) => !current)}
+            onClick={() => {
+              setIsMenuOpen((current) => !current);
+              setIsMobilePotentialOpen(false);
+            }}
           >
             <span className="flex h-5 w-5 flex-col justify-center gap-1.5" aria-hidden="true">
               <span className={`h-0.5 rounded-full bg-current transition-transform ${isMenuOpen ? "translate-y-2 rotate-45" : ""}`} />
@@ -221,12 +221,26 @@ export function SiteHeader() {
             {beforePotential.map((item) => (
               <MobileLink key={item.label} href={item.href}>{item.label}</MobileLink>
             ))}
-            <div className="px-3 pt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Potensi
+            <div>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-sage-50 hover:text-sage-800"
+                aria-expanded={isMobilePotentialOpen}
+                onClick={() => setIsMobilePotentialOpen((current) => !current)}
+              >
+                <span>Potensi</span>
+                <span aria-hidden="true" className={`text-xs transition-transform ${isMobilePotentialOpen ? "rotate-180" : ""}`}>
+                  v
+                </span>
+              </button>
+              {isMobilePotentialOpen ? (
+                <div className="grid gap-1 py-1 pl-4">
+                  {potentialItems.map((item) => (
+                    <MobileLink key={item.label} href={item.href}>{item.label}</MobileLink>
+                  ))}
+                </div>
+              ) : null}
             </div>
-            {potentialItems.map((item) => (
-              <MobileLink key={item.label} href={item.href}>{item.label}</MobileLink>
-            ))}
             {afterPotential.map((item) => (
               <MobileLink key={item.label} href={item.href}>{item.label}</MobileLink>
             ))}
@@ -236,6 +250,14 @@ export function SiteHeader() {
       ) : null}
     </header>
   );
+}
+
+function getPotentialHref(category: { label: string; slug: string }) {
+  const normalized = `${category.slug} ${category.label}`.toLowerCase();
+
+  return normalized.includes("seni") || normalized.includes("budaya") || normalized.includes("kesenian")
+    ? "/potensi/seni-budaya"
+    : `/potensi/${category.slug}`;
 }
 
 function HeaderLink({
@@ -271,4 +293,5 @@ function MobileLink({ href, children }: { href: string; children: React.ReactNod
     </Link>
   );
 }
+
 

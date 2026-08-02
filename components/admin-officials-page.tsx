@@ -34,7 +34,7 @@ export function AdminOfficialsPage({ officials }: AdminOfficialsPageProps) {
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Atur nama, jabatan, bidang kerja, kontak, dan urutan tampil
-              perangkat desa sebelum tersambung penyimpanan backend.
+              perangkat desa melalui penyimpanan admin.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

@@ -110,7 +110,7 @@ export function AdminPotentialCategoriesPage({
               Kelola kategori potensi
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Halaman ini memakai data tiruan untuk menyusun pola pengelolaan
+              Halaman ini memakai data admin untuk menyusun pola pengelolaan
               kategori sebelum integrasi penyimpanan backend.
             </p>
           </div>

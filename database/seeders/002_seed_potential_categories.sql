@@ -1,4 +1,4 @@
--- Seeder kategori contoh Potensi Desa Keseneng.
+-- Seeder kategori awal Potensi Desa Keseneng.
 -- Jalankan setelah migration 006_create_potensi_desa.sql.
 INSERT INTO potential_categories (
   id,

@@ -1,4 +1,4 @@
-﻿import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
 
 export type ProfileOfficialRecord = {
   id: string;
@@ -164,10 +164,8 @@ export function isOfficialInput(value: unknown): value is ProfileOfficialInput {
     candidate.role.trim().length > 0 &&
     typeof candidate.focus === "string" &&
     candidate.focus.trim().length > 0 &&
-    typeof candidate.contact === "string" &&
-    candidate.contact.trim().length > 0 &&
-    typeof candidate.area === "string" &&
-    candidate.area.trim().length > 0 &&
+    (candidate.contact === undefined || typeof candidate.contact === "string") &&
+    (candidate.area === undefined || typeof candidate.area === "string") &&
     (candidate.photoUrl === undefined || typeof candidate.photoUrl === "string") &&
     (candidate.photoAlt === undefined || typeof candidate.photoAlt === "string") &&
     typeof candidate.displayOrder === "number" &&

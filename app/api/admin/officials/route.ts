@@ -1,4 +1,4 @@
-﻿import {
+import {
   createOfficialRecord,
   deleteOfficialRecord,
   getOfficialRecord,
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 
   const records = listOfficialRecords().filter((record) => {
-    const matchesArea = area ? record.area.toLowerCase() === area : true;
+    const matchesArea = area ? (record.area ?? "").toLowerCase() === area : true;
     const matchesQuery = query
       ? [record.name, record.role, record.focus, record.contact, record.area]
           .join(" ")
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     data: records,
     meta: {
       total: records.length,
-      areas: Array.from(new Set(listOfficialRecords().map((record) => record.area))),
+      areas: Array.from(new Set(listOfficialRecords().map((record) => record.area).filter(Boolean))),
       area: area ?? null,
       query: query ?? null,
     },

@@ -33,7 +33,7 @@ export function AdminNewsPage({ news }: AdminNewsPageProps) {
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Tinjau berita, susun ringkasan, dan siapkan draft berbantuan AI
-              dengan data tiruan sebelum tersambung layanan backend.
+              dengan data admin melalui layanan admin.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -177,7 +177,7 @@ export function AdminNewsPage({ news }: AdminNewsPageProps) {
                 />
               </div>
               <div className="rounded-md border border-sky-100 bg-sky-50 p-3 text-sm leading-6 text-sky-800">
-                Draft AI tiruan: Pemerintah desa menyiapkan musyawarah untuk
+                Draft AI admin: Pemerintah desa menyiapkan musyawarah untuk
                 memetakan program pertanian prioritas warga.
               </div>
               <div className="grid grid-cols-2 gap-3">

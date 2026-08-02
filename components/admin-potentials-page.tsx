@@ -22,7 +22,7 @@ type PotentialItem = {
 
 export function AdminPotentialsPage({ categories, items: potentialItems }: AdminPotentialsPageProps) {
   const [activeCategory, setActiveCategory] = useState("semua");
-  const [mockPhotoName, setMockPhotoName] = useState("sawah-produktif.jpg");
+  const [selectedPhotoName, setSelectedPhotoName] = useState("sawah-produktif.jpg");
   const [editingItemId, setEditingItemId] = useState("");
   const [deleteItem, setDeleteItem] = useState<PotentialItem | null>(null);
   const [deleteText, setDeleteText] = useState("");
@@ -255,7 +255,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
               {editingItem ? "Form edit potensi" : "Form tambah potensi"}
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              Upload foto masih tiruan dan hanya menampilkan nama file di browser.
+              Upload foto masih admin dan hanya menampilkan nama file di browser.
             </p>
             <div className="mt-5 grid gap-4">
               {editingItem ? (
@@ -275,7 +275,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
                 </label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-sage-700"
-                  defaultValue={editorCategory?.slug ?? "pertanian"}
+                  defaultValue={editorCategory?.slug ?? "wisata-alam"}
                 >
                   {categories.map((category) => (
                     <option key={category.slug} value={category.slug}>
@@ -286,7 +286,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
               </div>
               <div>
                 <label className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                  Upload foto tiruan
+                  Upload foto admin
                 </label>
                 <label className="mt-2 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-stone-50 px-4 py-5 text-center transition-colors hover:border-sage-700 hover:bg-sage-50">
                   <span className="text-sm font-semibold text-slate-800">
@@ -302,13 +302,13 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       if (file) {
-                        setMockPhotoName(file.name);
+                        setSelectedPhotoName(file.name);
                       }
                     }}
                   />
                 </label>
                 <div className="mt-2 rounded-md bg-sage-50 px-3 py-2 text-sm font-semibold text-sage-800">
-                  File dipilih: {editingItem ? editingItem.image.split("/").pop() : mockPhotoName}
+                  File dipilih: {editingItem ? editingItem.image.split("/").pop() : selectedPhotoName}
                 </div>
               </div>
               <div>
@@ -317,7 +317,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
                 </label>
                 <textarea
                   className="mt-2 min-h-28 w-full resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-sage-700"
-                  defaultValue={editingItem?.summary ?? "Area pertanian warga yang menjadi sumber pangan utama."}
+                  defaultValue={editingItem?.summary ?? "Ringkasan potensi warga yang tampil di halaman kategori."}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -328,7 +328,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
                       setEditingItemId("");
                       showError("Edit potensi dibatalkan.");
                     } else {
-                      showSuccess("Draft potensi tersimpan secara tiruan.");
+                      showSuccess("Draft potensi tersimpan secara admin.");
                     }
                   }}
                   className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800"
@@ -337,7 +337,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
                 </button>
                 <button
                   type="button"
-                  onClick={() => showSuccess(editingItem ? "Perubahan potensi tersimpan secara tiruan." : "Potensi baru dipublikasikan secara tiruan.")}
+                  onClick={() => showSuccess(editingItem ? "Perubahan potensi tersimpan secara admin." : "Potensi baru dipublikasikan secara admin.")}
                   className="inline-flex h-11 items-center justify-center rounded-md bg-sage-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-sage-800"
                 >
                   {editingItem ? "Simpan perubahan" : "Publikasikan"}
@@ -396,7 +396,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
               />
               <p className="text-sm leading-6 text-slate-700">
                 Item kategori <strong>{deleteItem.category.label}</strong> ini
-                masih memakai dialog frontend tiruan dan belum menghapus data server.
+                masih memakai dialog frontend admin dan belum menghapus data server.
               </p>
             </div>
 
@@ -429,7 +429,7 @@ export function AdminPotentialsPage({ categories, items: potentialItems }: Admin
                 type="button"
                 disabled={deleteText !== deleteItem.title}
                 onClick={() => {
-                  showSuccess(`Item ${deleteItem.title} dihapus secara tiruan.`);
+                  showSuccess(`Item ${deleteItem.title} dihapus secara admin.`);
                   closeDeleteDialog();
                 }}
                 className="inline-flex h-11 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-200"

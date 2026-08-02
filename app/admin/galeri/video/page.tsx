@@ -9,7 +9,7 @@ export default async function AdminGaleriVideoPage() {
     <AdminCrudPage
       eyebrow="Admin Video Galeri"
       title="Kelola video galeri"
-      description="Tambah, edit, hapus video galeri. Thumbnail bisa diunggah langsung dari perangkat admin."
+      description="Tambah, ubah, hapus video galeri. Thumbnail bisa diunggah langsung dari perangkat admin."
       endpoint="/api/admin/gallery/videos"
       activeHref="/admin/galeri"
       publicHref="/galeri"
@@ -19,7 +19,7 @@ export default async function AdminGaleriVideoPage() {
         { name: "title", label: "Judul", required: true },
         { name: "description", label: "Deskripsi", type: "textarea", required: true },
         { name: "thumbnail", label: "Path thumbnail", type: "hidden", defaultValue: "/hero-section.webp" },
-        { name: "file", label: "Upload thumbnail", type: "file", accept: "image/jpeg,image/png,image/webp" },
+        { name: "file", label: "Unggah thumbnail", type: "file", accept: "image/jpeg,image/png,image/webp" },
         { name: "duration", label: "Durasi", defaultValue: "03:00", required: true },
         { name: "publishedAt", label: "Tanggal publikasi", type: "date", defaultValue: "2026-07-15", required: true },
       ]}
@@ -31,5 +31,6 @@ export default async function AdminGaleriVideoPage() {
     />
   );
 }
+
 
 

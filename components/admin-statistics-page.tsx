@@ -31,7 +31,7 @@ export function AdminStatisticsPage({
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Atur angka ringkasan, kategori grafik, dan data pembanding untuk
-              halaman statistik publik dengan data tiruan yang siap diganti API.
+              halaman statistik publik dari data yang tersimpan di admin.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -303,7 +303,7 @@ export function AdminStatisticsPage({
               <div>
                 <h2 className="text-lg font-semibold">Edit data terpilih</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Contoh mode edit untuk data yang sudah ada sebelum tersambung API.
+                  Contoh mode edit untuk data yang sudah ada yang sudah tersimpan.
                 </p>
               </div>
               <span className="rounded-md bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">

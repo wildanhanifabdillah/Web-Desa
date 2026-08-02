@@ -1,11 +1,23 @@
-﻿import { PotentialDevelopmentPage } from "@/components/potential-development-page";
-import { SiteHeader } from "@/components/site-header";
+import { notFound, redirect } from "next/navigation";
+import { listCategoryRecords } from "@/lib/potential-category-store";
 
-export default function PotensiPage() {
-  return (
-    <div className="min-h-screen bg-stone-50">
-      <SiteHeader />
-      <PotentialDevelopmentPage />
-    </div>
-  );
+export const dynamic = "force-dynamic";
+
+export default async function PotensiPage() {
+  const categories = await listCategoryRecords();
+  const firstCategory = categories[0];
+
+  if (!firstCategory) {
+    notFound();
+  }
+
+  redirect(getCategoryHref(firstCategory));
+}
+
+function getCategoryHref(category: { slug: string; label: string; title: string }) {
+  const normalized = `${category.slug} ${category.label} ${category.title}`.toLowerCase();
+
+  return normalized.includes("seni") || normalized.includes("budaya") || normalized.includes("kesenian")
+    ? "/potensi/seni-budaya"
+    : `/potensi/${category.slug}`;
 }

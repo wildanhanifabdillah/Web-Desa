@@ -46,66 +46,66 @@ export async function AdminDashboardPage() {
   const totalContent = news.length + officials.length + statistics.metrics.length + potentialItems.length + potentialCategories.length + totalDocuments + galleryAlbums.length + galleryVideos.length;
   const adminModules: AdminModule[] = [
     {
-      title: "Homepage",
-      description: "Kelola hero dan ringkasan profil yang tampil di beranda.",
+      title: "Beranda Website",
+      description: "Ubah gambar utama, judul, dan ringkasan yang tampil di halaman depan.",
       href: "/admin/homepage",
       metric: "2 blok",
     },
     {
-      title: "Berita dan AI",
-      description: "Kelola publikasi berita dan draft berbantuan AI.",
+      title: "Berita Desa",
+      description: "Tambah berita, unggah foto, dan gunakan bantuan AI untuk menulis teks awal.",
       href: "/admin/berita",
       metric: `${news.length} berita`,
     },
     {
       title: "Perangkat Desa",
-      description: "Kelola nama, jabatan, bidang kerja, dan kontak perangkat.",
+      description: "Ubah daftar perangkat desa, jabatan, foto, dan kontak.",
       href: "/admin/perangkat",
       metric: `${officials.length} perangkat`,
     },
 
     {
       title: "Statistik Desa",
-      description: "Kelola indikator ringkasan dan grafik kependudukan.",
+      description: "Ubah angka penting dan data statistik yang tampil untuk warga.",
       href: "/admin/statistik",
       metric: `${statistics.metrics.length} indikator`,
     },
     {
       title: "Potensi Desa",
-      description: "Atur kategori, item, foto, dan status konten potensi.",
+      description: "Kelola informasi potensi desa saat halaman potensi siap dibuka kembali.",
       href: "/admin/potensi",
       metric: `${potentialItems.length} item`,
     },
     {
-      title: "Kategori Potensi",
-      description: "Kelola kelompok potensi yang tampil di halaman publik.",
+      title: "Kelompok Potensi",
+      description: "Atur kelompok potensi seperti wisata alam, agro tourism, UMKM, dan seni budaya.",
       href: "/admin/potensi/kategori",
       metric: `${potentialCategories.length} kategori`,
     },
     {
       title: "Galeri",
-      description: "Kelola album foto dan video kegiatan desa.",
+      description: "Tambah album foto dan video kegiatan desa.",
       href: "/admin/galeri",
       metric: `${galleryAlbums.length}/${galleryVideos.length}`,
     },
     {
       title: "Transparansi",
-      description: "Publikasikan dokumen anggaran dan informasi publik desa.",
+      description: "Unggah dokumen anggaran dan informasi publik untuk warga.",
       href: "/admin/transparansi",
       metric: `${transparencyDocuments.length} dokumen`,
     },
     {
-      title: "Dokumen / Perdes",
-      description: "Kelola Perdes, Perkades, dan dokumen hukum desa.",
+      title: "Perdes & Dokumen",
+      description: "Unggah Perdes, Perkades, dan dokumen hukum desa.",
       href: "/admin/dokumen",
       metric: `${villageRegulations.length} dokumen`,
     },
   ];
   const recentActivities = [
-    `${news.length} berita tersedia di kanal publik/admin`,
-    `${potentialItems.length} item potensi dan ${potentialCategories.length} kategori aktif`,
-    `${galleryAlbums.length} album dan ${galleryVideos.length} video galeri terdata`,
-    `${totalDocuments} dokumen transparansi/perdes siap dikelola`,
+    `${news.length} berita tersimpan`,
+    `${potentialItems.length} data potensi dan ${potentialCategories.length} kelompok potensi`,
+    `${galleryAlbums.length} album foto dan ${galleryVideos.length} video galeri tersimpan`,
+    `${totalDocuments} dokumen transparansi dan Perdes tersimpan`,
   ];
 
   return (
@@ -117,10 +117,10 @@ export async function AdminDashboardPage() {
               Admin Desa Keseneng
             </p>
             <h1 className="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">
-              Dasbor pengelolaan konten desa
+              Pusat pengelolaan website desa
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Akses cepat untuk mengelola berita, profil, potensi, galeri, statistik, dan dokumen desa.
+              Pilih bagian website yang ingin diperbarui. Perubahan yang disimpan akan tampil di halaman publik sesuai statusnya.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -128,7 +128,7 @@ export async function AdminDashboardPage() {
               href="/"
               className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800"
             >
-              Lihat website publik
+              Lihat website
             </Link>
             <AdminLogoutButton />
 
@@ -140,10 +140,10 @@ export async function AdminDashboardPage() {
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 xl:grid-cols-[minmax(0,1fr)_22rem] lg:px-8">
         <div className="grid gap-5">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard value={adminModules.length.toString()} label="Modul aktif" />
-            <MetricCard value={totalContent.toLocaleString("id-ID")} label="Konten terdata" />
-            <MetricCard value={draftCount.toLocaleString("id-ID")} label="Draf/arsip" />
-            <MetricCard value={publishedCount.toLocaleString("id-ID")} label="Publik" />
+            <MetricCard value={adminModules.length.toString()} label="Menu tersedia" />
+            <MetricCard value={totalContent.toLocaleString("id-ID")} label="Data tersimpan" />
+            <MetricCard value={draftCount.toLocaleString("id-ID")} label="Belum tampil" />
+            <MetricCard value={publishedCount.toLocaleString("id-ID")} label="Tampil di website" />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
@@ -171,18 +171,18 @@ export async function AdminDashboardPage() {
 
         <aside className="grid gap-5 self-start xl:sticky xl:top-4">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Aksi cepat</h2>
+            <h2 className="text-lg font-semibold">Jalan pintas</h2>
             <div className="mt-4 grid gap-3">
-              <QuickAction href="/admin/berita" label="Kelola berita" />
-              <QuickAction href="/admin/perangkat" label="Kelola perangkat" />
-              <QuickAction href="/admin/homepage" label="Kelola homepage" />
-              <QuickAction href="/admin/galeri" label="Kelola galeri" />
-              <QuickAction href="/admin/dokumen" label="Kelola Perdes" />
+              <QuickAction href="/admin/berita" label="Tambah / ubah berita" />
+              <QuickAction href="/admin/perangkat" label="Ubah perangkat desa" />
+              <QuickAction href="/admin/homepage" label="Ubah beranda website" />
+              <QuickAction href="/admin/galeri" label="Tambah foto galeri" />
+              <QuickAction href="/admin/dokumen" label="Unggah Perdes" />
             </div>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Aktivitas terbaru</h2>
+            <h2 className="text-lg font-semibold">Ringkasan data</h2>
             <div className="mt-4 grid gap-3">
               {recentActivities.map((activity) => (
                 <div
@@ -238,6 +238,7 @@ function QuickAction({ href, label }: { href: string; label: string }) {
     </Link>
   );
 }
+
 
 
 

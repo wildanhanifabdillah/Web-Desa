@@ -153,7 +153,7 @@ export async function createAdminStatisticRecord(input: AdminStatisticCreateInpu
 
   if (type === "section") {
     const title = input.title?.trim() || input.label?.trim() || "";
-    const slug = normalizeSlug(input.slug ?? title);
+    const slug = normalizeSlug(input.slug?.trim() || title);
 
     if (records.sections.some((section) => section.slug === slug || section.id === slug)) {
       return { ok: false as const, reason: "duplicate-section" as const };
@@ -212,7 +212,7 @@ export async function createAdminStatisticRecord(input: AdminStatisticCreateInpu
   }
 
   const label = input.label?.trim() || input.title?.trim() || "";
-  const slug = normalizeSlug(input.slug ?? label);
+  const slug = normalizeSlug(input.slug?.trim() || label);
 
   if (records.metrics.some((metric) => metric.slug === slug || metric.id === slug)) {
     return { ok: false as const, reason: "duplicate-metric" as const };
@@ -520,7 +520,7 @@ function serializeMetric(metric: StatisticMetric): AdminStatisticMetric {
     category: metricCategories[metric.id] ?? "Umum",
     slug: metric.id,
     status: "published",
-    sourceName: "Data awal Desa Keseneng",
+    sourceName: "Data Desa Keseneng",
     periodLabel: "2026",
     featured: true,
   };
@@ -531,7 +531,7 @@ function serializeSection(section: StatisticSection): AdminStatisticSection {
     ...section,
     slug: section.id,
     status: "published",
-    sourceName: "Data awal Desa Keseneng",
+    sourceName: "Data Desa Keseneng",
     periodLabel: "2026",
   };
 }

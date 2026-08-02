@@ -10,7 +10,7 @@ export default async function AdminBeritaPage() {
     <AdminCrudPage
       eyebrow="Admin Berita"
       title="Kelola berita desa"
-      description="Tambah, edit, hapus, dan atur status publikasi berita desa. Gambar diunggah langsung dari perangkat admin."
+      description="Tambah, ubah, hapus, dan atur status publikasi berita desa. Gambar diunggah langsung dari perangkat admin."
       endpoint="/api/admin/news"
       activeHref="/admin/berita"
       publicHref="/berita"
@@ -23,8 +23,8 @@ export default async function AdminBeritaPage() {
         { name: "category", label: "Kategori", required: true },
         { name: "authorName", label: "Penulis", defaultValue: "Admin Desa Keseneng" },
         { name: "imageUrl", label: "Path gambar", type: "hidden", defaultValue: "/images/berita/informasi-publik.jpg" },
-        { name: "file", label: "Upload gambar utama", type: "file", accept: "image/jpeg,image/png,image/webp" },
-        { name: "galleryFiles", label: "Upload foto tambahan", type: "file", accept: "image/jpeg,image/png,image/webp", multiple: true },
+        { name: "file", label: "Unggah gambar utama", type: "file", accept: "image/jpeg,image/png,image/webp" },
+        { name: "galleryFiles", label: "Unggah foto tambahan", type: "file", accept: "image/jpeg,image/png,image/webp", multiple: true },
         { name: "imageAlt", label: "Deskripsi gambar", defaultValue: "Ilustrasi berita Desa Keseneng" },
         { name: "status", label: "Status", type: "select", defaultValue: "draft", options: [
           { label: "Draf", value: "draft" },
@@ -41,6 +41,7 @@ export default async function AdminBeritaPage() {
     />
   );
 }
+
 
 
 

@@ -1,4 +1,4 @@
-﻿import { listGeographyRecords } from "@/lib/profile-geography";
+import { listGeographyRecords } from "@/lib/profile-geography";
 import { listProfileGeneralRecords } from "@/lib/profile-general";
 import { listProfileHistoryRecords } from "@/lib/profile-history";
 import { listOfficialRecords } from "@/lib/profile-officials";
@@ -93,7 +93,7 @@ const fallbackProfileData: ProfileData = {
     kicker: "Gambaran Umum",
     title: "Desa yang bergerak dengan kekuatan warga dan potensi lokal.",
     description:
-      "Gambaran umum ini memakai data tiruan sebagai dasar tampilan awal, sambil menunggu integrasi data asli dari admin desa.",
+      "Gambaran umum ini menampilkan informasi profil yang dikelola melalui panel admin desa.",
     body:
       "Desa Keseneng berada di wilayah perbukitan yang mendukung aktivitas pertanian, perkebunan, dan kegiatan masyarakat berbasis gotong royong. Warga menjaga potensi pangan, seni tradisi, serta produk lokal sebagai identitas desa yang terus dikembangkan.",
     highlights: [
@@ -116,7 +116,7 @@ const fallbackProfileData: ProfileData = {
     kicker: "Sejarah Desa",
     title: "Linimasa perkembangan Desa Keseneng dari masa ke masa.",
     description:
-      "Data berikut bersifat tiruan untuk membentuk pola tampilan sejarah desa sebelum konten resmi dimasukkan oleh admin.",
+      "Data berikut menampilkan sejarah desa yang dikelola melalui panel admin desa.",
     timeline: [
       {
         period: "Masa awal",
@@ -167,7 +167,7 @@ const fallbackProfileData: ProfileData = {
     visionTitle:
       "Terwujudnya Desa Keseneng yang maju, terbuka, mandiri, dan berdaya melalui potensi lokal.",
     visionDescription:
-      "Visi dan misi ini memakai data tiruan untuk memandu desain halaman, sehingga admin nantinya tinggal mengganti konten resmi desa.",
+      "Visi dan misi ini menampilkan arah pembangunan desa yang dikelola melalui panel admin.",
     missions: [
       {
         focus: "Pelayanan Publik",
