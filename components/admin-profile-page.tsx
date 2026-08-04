@@ -175,8 +175,11 @@ export function AdminProfilePage({ initialGeneral, initialGeography, initialVisi
             <TextInput label="Kicker" value={general.overviewKicker} onChange={(value) => setGeneral((current) => ({ ...current, overviewKicker: value }))} />
             <TextArea label="Judul" value={general.overviewTitle} rows={3} onChange={(value) => setGeneral((current) => ({ ...current, overviewTitle: value }))} />
             <TextArea label="Deskripsi kiri" value={general.overviewDescription} rows={4} onChange={(value) => setGeneral((current) => ({ ...current, overviewDescription: value }))} />
-            <TextArea label="Isi card kanan" value={general.overviewBody} rows={5} onChange={(value) => setGeneral((current) => ({ ...current, overviewBody: value }))} />            <HighlightListEditor items={general.highlights} onChange={(items) => setGeneral((current) => ({ ...current, highlights: items }))} />
-            <PillarListEditor items={general.pillars} onChange={(items) => setGeneral((current) => ({ ...current, pillars: items }))} />
+            <TextArea label="Isi card kanan" value={general.overviewBody} rows={5} onChange={(value) => setGeneral((current) => ({ ...current, overviewBody: value }))} />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <HighlightListEditor items={general.highlights} onChange={(items) => setGeneral((current) => ({ ...current, highlights: items }))} />
+              <PillarListEditor items={general.pillars} onChange={(items) => setGeneral((current) => ({ ...current, pillars: items }))} />
+            </div>
           </div>
           <SubmitButton loading={savingSection === "general"} label="Simpan gambaran umum" />
         </form>
