@@ -171,30 +171,11 @@ export function AdminProfilePage({ initialGeneral, initialGeography, initialVisi
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:px-8">
         <form onSubmit={saveGeneral} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <SectionHeading eyebrow="Gambaran Umum" title="Konten utama profil" />
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            <TextInput label="Slug" value={general.slug} onChange={(value) => setGeneral((current) => ({ ...current, slug: value }))} />
-            <TextInput label="Nama desa" value={general.villageName} onChange={(value) => setGeneral((current) => ({ ...current, villageName: value }))} />
-            <TextInput label="Kecamatan" value={general.district} onChange={(value) => setGeneral((current) => ({ ...current, district: value }))} />
-            <TextInput label="Kabupaten" value={general.regency} onChange={(value) => setGeneral((current) => ({ ...current, regency: value }))} />
-            <TextInput label="Provinsi" value={general.province} onChange={(value) => setGeneral((current) => ({ ...current, province: value }))} />
-            <TextInput label="Karakter" value={general.character} onChange={(value) => setGeneral((current) => ({ ...current, character: value }))} />
-            <TextInput label="Luas wilayah" value={general.area} onChange={(value) => setGeneral((current) => ({ ...current, area: value }))} />
-            <TextInput label="Ketinggian" value={general.elevation} onChange={(value) => setGeneral((current) => ({ ...current, elevation: value }))} />
-            <TextInput label="Dominasi lahan" value={general.dominantLandUse} onChange={(value) => setGeneral((current) => ({ ...current, dominantLandUse: value }))} />
-            <TextInput label="Kicker overview" value={general.overviewKicker} onChange={(value) => setGeneral((current) => ({ ...current, overviewKicker: value }))} />
-            <div className="lg:col-span-2">
-              <TextArea label="Deskripsi hero/kiri" value={general.description} rows={4} onChange={(value) => setGeneral((current) => ({ ...current, description: value }))} />
-            </div>
-            <div className="lg:col-span-2">
-              <TextArea label="Judul gambaran umum" value={general.overviewTitle} rows={3} onChange={(value) => setGeneral((current) => ({ ...current, overviewTitle: value }))} />
-            </div>
-            <div className="lg:col-span-2">
-              <TextArea label="Deskripsi gambaran umum" value={general.overviewDescription} rows={4} onChange={(value) => setGeneral((current) => ({ ...current, overviewDescription: value }))} />
-            </div>
-            <div className="lg:col-span-2">
-              <TextArea label="Isi card kanan" value={general.overviewBody} rows={5} onChange={(value) => setGeneral((current) => ({ ...current, overviewBody: value }))} />
-            </div>
-            <HighlightListEditor items={general.highlights} onChange={(items) => setGeneral((current) => ({ ...current, highlights: items }))} />
+          <div className="mt-5 grid gap-4">
+            <TextInput label="Kicker" value={general.overviewKicker} onChange={(value) => setGeneral((current) => ({ ...current, overviewKicker: value }))} />
+            <TextArea label="Judul" value={general.overviewTitle} rows={3} onChange={(value) => setGeneral((current) => ({ ...current, overviewTitle: value }))} />
+            <TextArea label="Deskripsi kiri" value={general.overviewDescription} rows={4} onChange={(value) => setGeneral((current) => ({ ...current, overviewDescription: value }))} />
+            <TextArea label="Isi card kanan" value={general.overviewBody} rows={5} onChange={(value) => setGeneral((current) => ({ ...current, overviewBody: value }))} />            <HighlightListEditor items={general.highlights} onChange={(items) => setGeneral((current) => ({ ...current, highlights: items }))} />
             <PillarListEditor items={general.pillars} onChange={(items) => setGeneral((current) => ({ ...current, pillars: items }))} />
           </div>
           <SubmitButton loading={savingSection === "general"} label="Simpan gambaran umum" />
