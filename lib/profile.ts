@@ -225,14 +225,12 @@ export async function getProfileData() {
       ],
     },
     overview: {
-      ...fallbackProfileData.overview,
-      description: general.description,
-      body: `${general.villageName} berada di wilayah ${general.regency} dengan karakter ${general.character.toLowerCase()}. Wilayah ini memiliki luas ${general.area}, ketinggian ${general.elevation}, dan dominasi lahan ${general.dominantLandUse.toLowerCase()}.`,
-      highlights: [
-        { label: "Karakter desa", value: general.character },
-        { label: "Luas wilayah", value: general.area },
-        { label: "Dominasi lahan", value: general.dominantLandUse },
-      ],
+      kicker: general.overviewKicker,
+      title: general.overviewTitle,
+      description: general.overviewDescription,
+      body: general.overviewBody,
+      highlights: general.highlights,
+      pillars: general.pillars,
     },
     geography: {
       ...fallbackProfileData.geography,

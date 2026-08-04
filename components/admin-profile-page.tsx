@@ -3,16 +3,40 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { AdminNavigation } from "@/components/admin-navigation";
+import type { ProfileGeneralRecord } from "@/lib/profile-general";
 import type { ProfileGeographyFact, ProfileGeographyRecord } from "@/lib/profile-geography";
 import type { ProfileMissionInput, ProfileVisionMissionRecord } from "@/lib/profile-vision-mission";
+import type { ProfileHighlight } from "@/lib/profile";
 
 type AdminProfilePageProps = {
+  initialGeneral?: ProfileGeneralRecord | null;
   initialGeography?: ProfileGeographyRecord | null;
   initialVisionMission?: ProfileVisionMissionRecord | null;
 };
 
 type Notice = { type: "success" | "error"; message: string } | null;
-type SavingSection = "geography" | "visionMission" | null;
+type SavingSection = "general" | "geography" | "visionMission" | null;
+
+const emptyGeneral: ProfileGeneralRecord = {
+  id: "",
+  slug: "desa-keseneng",
+  villageName: "Desa Keseneng",
+  district: "Mojotengah",
+  regency: "Wonosobo",
+  province: "Jawa Tengah",
+  character: "Agraris dan budaya",
+  description: "",
+  area: "328 ha",
+  elevation: "820 mdpl",
+  dominantLandUse: "Sawah dan kebun",
+  overviewKicker: "Gambaran Umum",
+  overviewTitle: "",
+  overviewDescription: "",
+  overviewBody: "",
+  highlights: [],
+  pillars: [],
+  updatedAt: new Date().toISOString(),
+};
 
 const emptyGeography: ProfileGeographyRecord = {
   id: "",
@@ -33,11 +57,45 @@ const emptyVisionMission: ProfileVisionMissionRecord = {
   updatedAt: new Date().toISOString(),
 };
 
-export function AdminProfilePage({ initialGeography, initialVisionMission }: AdminProfilePageProps) {
+export function AdminProfilePage({ initialGeneral, initialGeography, initialVisionMission }: AdminProfilePageProps) {
+  const [general, setGeneral] = useState(initialGeneral ?? emptyGeneral);
   const [geography, setGeography] = useState(initialGeography ?? emptyGeography);
   const [visionMission, setVisionMission] = useState(initialVisionMission ?? emptyVisionMission);
   const [notice, setNotice] = useState<Notice>(null);
   const [savingSection, setSavingSection] = useState<SavingSection>(null);
+
+  async function saveGeneral(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingSection("general");
+    setNotice(null);
+
+    try {
+      const updated = await saveSection<ProfileGeneralRecord>("general", general.id, {
+        slug: general.slug,
+        villageName: general.villageName,
+        district: general.district,
+        regency: general.regency,
+        province: general.province,
+        character: general.character,
+        description: general.description,
+        area: general.area,
+        elevation: general.elevation,
+        dominantLandUse: general.dominantLandUse,
+        overviewKicker: general.overviewKicker,
+        overviewTitle: general.overviewTitle,
+        overviewDescription: general.overviewDescription,
+        overviewBody: general.overviewBody,
+        highlights: general.highlights,
+        pillars: general.pillars,
+      });
+      setGeneral(updated);
+      setNotice({ type: "success", message: "Gambaran umum berhasil disimpan." });
+    } catch (error) {
+      setNotice({ type: "error", message: getErrorMessage(error) });
+    } finally {
+      setSavingSection(null);
+    }
+  }
 
   async function saveGeography(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,7 +148,7 @@ export function AdminProfilePage({ initialGeography, initialVisionMission }: Adm
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sage-700">Admin Profil Desa</p>
             <h1 className="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">Kelola konten profil publik</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Ubah kondisi geografis serta visi dan misi yang tampil di halaman profil desa.
+              Ubah gambaran umum, kondisi geografis, serta visi dan misi yang tampil di halaman profil desa.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -110,7 +168,40 @@ export function AdminProfilePage({ initialGeography, initialVisionMission }: Adm
         </div>
       ) : null}
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 xl:grid-cols-2 lg:px-8">
+      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:px-8">
+        <form onSubmit={saveGeneral} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionHeading eyebrow="Gambaran Umum" title="Konten utama profil" />
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <TextInput label="Slug" value={general.slug} onChange={(value) => setGeneral((current) => ({ ...current, slug: value }))} />
+            <TextInput label="Nama desa" value={general.villageName} onChange={(value) => setGeneral((current) => ({ ...current, villageName: value }))} />
+            <TextInput label="Kecamatan" value={general.district} onChange={(value) => setGeneral((current) => ({ ...current, district: value }))} />
+            <TextInput label="Kabupaten" value={general.regency} onChange={(value) => setGeneral((current) => ({ ...current, regency: value }))} />
+            <TextInput label="Provinsi" value={general.province} onChange={(value) => setGeneral((current) => ({ ...current, province: value }))} />
+            <TextInput label="Karakter" value={general.character} onChange={(value) => setGeneral((current) => ({ ...current, character: value }))} />
+            <TextInput label="Luas wilayah" value={general.area} onChange={(value) => setGeneral((current) => ({ ...current, area: value }))} />
+            <TextInput label="Ketinggian" value={general.elevation} onChange={(value) => setGeneral((current) => ({ ...current, elevation: value }))} />
+            <TextInput label="Dominasi lahan" value={general.dominantLandUse} onChange={(value) => setGeneral((current) => ({ ...current, dominantLandUse: value }))} />
+            <TextInput label="Kicker overview" value={general.overviewKicker} onChange={(value) => setGeneral((current) => ({ ...current, overviewKicker: value }))} />
+            <div className="lg:col-span-2">
+              <TextArea label="Deskripsi hero/kiri" value={general.description} rows={4} onChange={(value) => setGeneral((current) => ({ ...current, description: value }))} />
+            </div>
+            <div className="lg:col-span-2">
+              <TextArea label="Judul gambaran umum" value={general.overviewTitle} rows={3} onChange={(value) => setGeneral((current) => ({ ...current, overviewTitle: value }))} />
+            </div>
+            <div className="lg:col-span-2">
+              <TextArea label="Deskripsi gambaran umum" value={general.overviewDescription} rows={4} onChange={(value) => setGeneral((current) => ({ ...current, overviewDescription: value }))} />
+            </div>
+            <div className="lg:col-span-2">
+              <TextArea label="Isi card kanan" value={general.overviewBody} rows={5} onChange={(value) => setGeneral((current) => ({ ...current, overviewBody: value }))} />
+            </div>
+            <HighlightListEditor items={general.highlights} onChange={(items) => setGeneral((current) => ({ ...current, highlights: items }))} />
+            <PillarListEditor items={general.pillars} onChange={(items) => setGeneral((current) => ({ ...current, pillars: items }))} />
+          </div>
+          <SubmitButton loading={savingSection === "general"} label="Simpan gambaran umum" />
+        </form>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-6 sm:px-6 xl:grid-cols-2 lg:px-8">
         <form onSubmit={saveGeography} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <SectionHeading eyebrow="Geografis" title="Kondisi wilayah" />
           <div className="mt-5 grid gap-4">
@@ -138,7 +229,7 @@ export function AdminProfilePage({ initialGeography, initialVisionMission }: Adm
   );
 }
 
-async function saveSection<T>(section: "geography" | "visionMission", id: string, data: unknown) {
+async function saveSection<T>(section: "general" | "geography" | "visionMission", id: string, data: unknown) {
   const response = await fetch("/api/admin/profile", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -177,6 +268,35 @@ function TextArea({ label, value, rows, onChange }: { label: string; value: stri
       <span>{label}</span>
       <textarea required value={value} rows={rows} onChange={(event) => onChange(event.target.value)} className="resize-y rounded-md border border-slate-300 px-3 py-2 text-sm font-medium leading-6 text-slate-950 outline-none transition-colors focus:border-sage-700" />
     </label>
+  );
+}
+
+function HighlightListEditor({ items, onChange }: { items: ProfileHighlight[]; onChange: (items: ProfileHighlight[]) => void }) {
+  return (
+    <div className="grid gap-3 rounded-md border border-slate-200 bg-stone-50 p-4">
+      <ListHeader title="Highlight card" onAdd={() => onChange([...items, { label: "", value: "" }])} />
+      {items.map((item, index) => (
+        <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+          <input required aria-label={`Highlight label ${index + 1}`} value={item.label} onChange={(event) => onChange(updateAt(items, index, { ...item, label: event.target.value }))} className="h-10 rounded-md border border-slate-300 px-3 text-sm" />
+          <input required aria-label={`Highlight nilai ${index + 1}`} value={item.value} onChange={(event) => onChange(updateAt(items, index, { ...item, value: event.target.value }))} className="h-10 rounded-md border border-slate-300 px-3 text-sm" />
+          <RemoveButton onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PillarListEditor({ items, onChange }: { items: string[]; onChange: (items: string[]) => void }) {
+  return (
+    <div className="grid gap-3 rounded-md border border-slate-200 bg-stone-50 p-4">
+      <ListHeader title="Pilar/tombol" onAdd={() => onChange([...items, ""])} />
+      {items.map((item, index) => (
+        <div key={index} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <input required aria-label={`Pilar ${index + 1}`} value={item} onChange={(event) => onChange(updateAt(items, index, event.target.value))} className="h-10 rounded-md border border-slate-300 px-3 text-sm" />
+          <RemoveButton onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))} />
+        </div>
+      ))}
+    </div>
   );
 }
 

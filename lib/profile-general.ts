@@ -1,5 +1,6 @@
-﻿import type { RowDataPacket } from "mysql2";
+import type { RowDataPacket } from "mysql2";
 import { executeSql, queryRows } from "@/lib/db";
+import type { ProfileHighlight } from "@/lib/profile";
 
 export type ProfileGeneralRecord = {
   id: string;
@@ -13,6 +14,12 @@ export type ProfileGeneralRecord = {
   area: string;
   elevation: string;
   dominantLandUse: string;
+  overviewKicker: string;
+  overviewTitle: string;
+  overviewDescription: string;
+  overviewBody: string;
+  highlights: ProfileHighlight[];
+  pillars: string[];
   updatedAt: string;
 };
 
@@ -23,6 +30,10 @@ type ProfileRow = RowDataPacket & {
   slug: string;
   village_name: string;
   hero_description: string;
+  overview_kicker: string;
+  overview_title: string;
+  overview_description: string;
+  overview_body: string;
   updated_at: Date | string;
 };
 
@@ -31,9 +42,14 @@ type FactRow = RowDataPacket & {
   value: string;
 };
 
+type PillarRow = RowDataPacket & {
+  name: string;
+};
+
 export async function listProfileGeneralRecords() {
   const rows = await queryRows<ProfileRow>(
-    `SELECT id, slug, village_name, hero_description, updated_at
+    `SELECT id, slug, village_name, hero_description, overview_kicker, overview_title,
+            overview_description, overview_body, updated_at
      FROM village_profiles
      WHERE is_active = TRUE
      ORDER BY updated_at DESC`,
@@ -44,7 +60,8 @@ export async function listProfileGeneralRecords() {
 
 export async function getProfileGeneralRecord(id: string) {
   const rows = await queryRows<ProfileRow>(
-    `SELECT id, slug, village_name, hero_description, updated_at
+    `SELECT id, slug, village_name, hero_description, overview_kicker, overview_title,
+            overview_description, overview_body, updated_at
      FROM village_profiles
      WHERE id = ? OR slug = ?
      LIMIT 1`,
@@ -64,7 +81,7 @@ export async function createProfileGeneralRecord(input: ProfileGeneralInput) {
       history_kicker, history_title, history_description,
       geography_kicker, geography_title, geography_description,
       vision_label, vision_title, vision_description, is_active)
-     VALUES (?, ?, ?, 'Profil Desa', ?, ?, 'Gambaran Umum', ?, ?, ?,
+     VALUES (?, ?, ?, 'Profil Desa', ?, ?, ?, ?, ?, ?,
       'Sejarah Desa', 'Linimasa perkembangan desa.', 'Data sejarah desa.',
       'Kondisi Geografis', 'Kondisi geografis desa.', 'Data geografis desa.',
       'Visi Desa', 'Visi desa.', 'Misi desa.', TRUE)`,
@@ -74,12 +91,15 @@ export async function createProfileGeneralRecord(input: ProfileGeneralInput) {
       input.villageName,
       `Mengenal ${input.villageName}, desa ${input.character.toLowerCase()}.`,
       input.description,
-      `${input.villageName}, ruang tumbuh warga dan potensi lokal.`,
-      input.description,
-      `${input.villageName} berada di wilayah ${input.regency} dengan karakter ${input.character.toLowerCase()}. Wilayah ini memiliki luas ${input.area}, ketinggian ${input.elevation}, dan dominasi lahan ${input.dominantLandUse.toLowerCase()}.`,
+      input.overviewKicker,
+      input.overviewTitle,
+      input.overviewDescription,
+      input.overviewBody,
     ],
   );
   await replaceGeneralFacts(id, input);
+  await replaceHighlights(id, input.highlights);
+  await replacePillars(id, input.pillars);
 
   return getProfileGeneralRecord(id);
 }
@@ -96,20 +116,23 @@ export async function updateProfileGeneralRecord(id: string, input: Partial<Prof
   await executeSql(
     `UPDATE village_profiles
      SET slug = ?, village_name = ?, hero_title = ?, hero_description = ?,
-         overview_title = ?, overview_description = ?, overview_body = ?
+         overview_kicker = ?, overview_title = ?, overview_description = ?, overview_body = ?
      WHERE id = ?`,
     [
       updated.slug,
       updated.villageName,
       `Mengenal ${updated.villageName}, desa ${updated.character.toLowerCase()}.`,
       updated.description,
-      `${updated.villageName}, ruang tumbuh warga dan potensi lokal.`,
-      updated.description,
-      `${updated.villageName} berada di wilayah ${updated.regency} dengan karakter ${updated.character.toLowerCase()}. Wilayah ini memiliki luas ${updated.area}, ketinggian ${updated.elevation}, dan dominasi lahan ${updated.dominantLandUse.toLowerCase()}.`,
+      updated.overviewKicker,
+      updated.overviewTitle,
+      updated.overviewDescription,
+      updated.overviewBody,
       existingRecord.id,
     ],
   );
   await replaceGeneralFacts(existingRecord.id, updated);
+  await replaceHighlights(existingRecord.id, updated.highlights);
+  await replacePillars(existingRecord.id, updated.pillars);
 
   return getProfileGeneralRecord(existingRecord.id);
 }
@@ -149,21 +172,45 @@ export function isProfileGeneralInput(value: unknown): value is ProfileGeneralIn
     "area",
     "elevation",
     "dominantLandUse",
+    "overviewKicker",
+    "overviewTitle",
+    "overviewDescription",
+    "overviewBody",
   ];
 
-  return requiredStringFields.every(
-    (field) => typeof candidate[field] === "string" && candidate[field].trim().length > 0,
+  return (
+    requiredStringFields.every((field) => typeof candidate[field] === "string" && candidate[field].trim().length > 0) &&
+    Array.isArray(candidate.highlights) &&
+    candidate.highlights.every(isHighlightInput) &&
+    Array.isArray(candidate.pillars) &&
+    candidate.pillars.every((pillar) => typeof pillar === "string" && pillar.trim().length > 0)
   );
 }
 
 async function mapProfileGeneralRow(row: ProfileRow): Promise<ProfileGeneralRecord> {
-  const facts = await queryRows<FactRow>(
-    `SELECT label, value
-     FROM village_profile_facts
-     WHERE profile_id = ? AND section = 'hero'
-     ORDER BY display_order ASC`,
-    [row.id],
-  );
+  const [facts, highlights, pillars] = await Promise.all([
+    queryRows<FactRow>(
+      `SELECT label, value
+       FROM village_profile_facts
+       WHERE profile_id = ? AND section = 'hero'
+       ORDER BY display_order ASC`,
+      [row.id],
+    ),
+    queryRows<FactRow>(
+      `SELECT label, value
+       FROM village_profile_highlights
+       WHERE profile_id = ?
+       ORDER BY display_order ASC`,
+      [row.id],
+    ),
+    queryRows<PillarRow>(
+      `SELECT name
+       FROM village_profile_pillars
+       WHERE profile_id = ?
+       ORDER BY display_order ASC`,
+      [row.id],
+    ),
+  ]);
   const byLabel = new Map(facts.map((fact) => [fact.label.toLowerCase(), fact.value]));
 
   return {
@@ -178,6 +225,12 @@ async function mapProfileGeneralRow(row: ProfileRow): Promise<ProfileGeneralReco
     area: byLabel.get("luas wilayah") ?? "328 ha",
     elevation: byLabel.get("ketinggian") ?? "820 mdpl",
     dominantLandUse: byLabel.get("dominasi lahan") ?? "Sawah dan kebun",
+    overviewKicker: row.overview_kicker,
+    overviewTitle: row.overview_title,
+    overviewDescription: row.overview_description,
+    overviewBody: row.overview_body,
+    highlights: highlights.map((highlight) => ({ label: highlight.label, value: highlight.value })),
+    pillars: pillars.map((pillar) => pillar.name),
     updatedAt: normalizeSqlDate(row.updated_at),
   };
 }
@@ -200,6 +253,39 @@ async function replaceGeneralFacts(profileId: string, record: ProfileGeneralReco
       [crypto.randomUUID(), profileId, fact[0], fact[1], index + 1],
     );
   }
+}
+
+async function replaceHighlights(profileId: string, highlights: ProfileHighlight[]) {
+  await executeSql("DELETE FROM village_profile_highlights WHERE profile_id = ?", [profileId]);
+
+  for (const [index, highlight] of highlights.entries()) {
+    await executeSql(
+      "INSERT INTO village_profile_highlights (id, profile_id, label, value, display_order) VALUES (?, ?, ?, ?, ?)",
+      [crypto.randomUUID(), profileId, highlight.label, highlight.value, index + 1],
+    );
+  }
+}
+
+async function replacePillars(profileId: string, pillars: string[]) {
+  await executeSql("DELETE FROM village_profile_pillars WHERE profile_id = ?", [profileId]);
+
+  for (const [index, pillar] of pillars.entries()) {
+    await executeSql(
+      "INSERT INTO village_profile_pillars (id, profile_id, name, display_order) VALUES (?, ?, ?, ?)",
+      [crypto.randomUUID(), profileId, pillar, index + 1],
+    );
+  }
+}
+
+function isHighlightInput(value: unknown): value is ProfileHighlight {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<ProfileHighlight>;
+
+  return typeof candidate.label === "string" && candidate.label.trim().length > 0 &&
+    typeof candidate.value === "string" && candidate.value.trim().length > 0;
 }
 
 function normalizeSqlDate(value: Date | string) {

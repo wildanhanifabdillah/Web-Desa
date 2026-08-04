@@ -1,4 +1,11 @@
 import {
+  isProfileGeneralInput,
+  listProfileGeneralRecords,
+  resetProfileGeneralRecords,
+  updateProfileGeneralRecord,
+  type ProfileGeneralInput,
+} from "@/lib/profile-general";
+import {
   isGeographyInput,
   listGeographyRecords,
   resetGeographyRecords,
@@ -13,7 +20,7 @@ import {
   type ProfileVisionMissionInput,
 } from "@/lib/profile-vision-mission";
 
-type ProfileSection = "geography" | "visionMission";
+type ProfileSection = "general" | "geography" | "visionMission";
 
 type ProfileUpdatePayload = {
   section?: ProfileSection;
@@ -22,13 +29,15 @@ type ProfileUpdatePayload = {
 };
 
 export async function GET() {
-  const [geography, visionMission] = await Promise.all([
+  const [general, geography, visionMission] = await Promise.all([
+    listProfileGeneralRecords(),
     listGeographyRecords(),
     listVisionMissionRecords(),
   ]);
 
   return Response.json({
     data: {
+      general: general[0] ?? null,
       geography: geography[0] ?? null,
       visionMission: visionMission[0] ?? null,
     },
@@ -40,6 +49,20 @@ export async function PUT(request: Request) {
 
   if (!body?.section || !body.id || !body.data || typeof body.data !== "object") {
     return Response.json({ error: "Section, ID, dan data profil wajib dikirim." }, { status: 400 });
+  }
+
+  if (body.section === "general") {
+    if (!isProfileGeneralInput(body.data)) {
+      return Response.json({ error: "Payload gambaran umum belum lengkap atau tidak valid." }, { status: 400 });
+    }
+
+    const updated = await updateProfileGeneralRecord(body.id, body.data as ProfileGeneralInput);
+
+    if (!updated) {
+      return Response.json({ error: "Gambaran umum profil tidak ditemukan." }, { status: 404 });
+    }
+
+    return Response.json({ data: updated });
   }
 
   if (body.section === "geography") {
@@ -77,6 +100,11 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const resetTarget = searchParams.get("reset");
 
+  if (resetTarget === "general") {
+    const records = await resetProfileGeneralRecords();
+    return Response.json({ data: records[0] ?? null });
+  }
+
   if (resetTarget === "geography") {
     const records = await resetGeographyRecords();
     return Response.json({ data: records[0] ?? null });
@@ -88,20 +116,22 @@ export async function DELETE(request: Request) {
   }
 
   if (resetTarget === "all") {
-    const [geography, visionMission] = await Promise.all([
+    const [general, geography, visionMission] = await Promise.all([
+      resetProfileGeneralRecords(),
       resetGeographyRecords(),
       resetVisionMissionRecords(),
     ]);
 
     return Response.json({
       data: {
+        general: general[0] ?? null,
         geography: geography[0] ?? null,
         visionMission: visionMission[0] ?? null,
       },
     });
   }
 
-  return Response.json({ error: "Parameter reset harus geography, visionMission, atau all." }, { status: 400 });
+  return Response.json({ error: "Parameter reset harus general, geography, visionMission, atau all." }, { status: 400 });
 }
 
 async function parseJsonBody<T>(request: Request) {
