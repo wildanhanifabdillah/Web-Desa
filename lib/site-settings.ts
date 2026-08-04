@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type SiteLink = {
   label: string;
@@ -46,6 +47,13 @@ export type SiteSettings = {
 };
 
 export type SiteSettingsInput = Omit<SiteSettings, "id" | "updatedAt">;
+
+type SettingsRow = RowDataPacket & {
+  setting_value: string | SiteSettings;
+  updated_at: Date | string;
+};
+
+const settingKey = "site_settings";
 
 const fallbackSiteSettings: SiteSettings = {
   id: "site-settings",
@@ -107,20 +115,43 @@ const fallbackSiteSettings: SiteSettings = {
   updatedAt: "2026-07-16T00:00:00.000Z",
 };
 
-let siteSettings = loadJsonFile("site-settings.json", fallbackSiteSettings);
-
-export function getSiteSettings() {
-  return siteSettings;
+export function getFallbackSiteSettings() {
+  return fallbackSiteSettings;
 }
 
-export function updateSiteSettings(input: Partial<SiteSettingsInput>) {
+export async function getSiteSettings() {
+  const rows = await queryRows<SettingsRow>(
+    "SELECT setting_value, updated_at FROM admin_site_settings WHERE setting_key = ? LIMIT 1",
+    [settingKey],
+  );
+
+  if (!rows[0]) {
+    await persistSiteSettings(fallbackSiteSettings);
+
+    return fallbackSiteSettings;
+  }
+
+  const parsed = parseSettings(rows[0].setting_value);
+
+  if (!isSiteSettings(parsed)) {
+    return fallbackSiteSettings;
+  }
+
+  return {
+    ...parsed,
+    updatedAt: normalizeSqlDate(rows[0].updated_at) ?? parsed.updatedAt,
+  };
+}
+
+export async function updateSiteSettings(input: Partial<SiteSettingsInput>) {
+  const current = await getSiteSettings();
   const updated: SiteSettings = {
-    ...siteSettings,
+    ...current,
     ...input,
-    brand: input.brand ?? siteSettings.brand,
-    header: input.header ?? siteSettings.header,
-    footer: input.footer ?? siteSettings.footer,
-    socialLinks: input.socialLinks ?? siteSettings.socialLinks,
+    brand: input.brand ?? current.brand,
+    header: input.header ?? current.header,
+    footer: input.footer ?? current.footer,
+    socialLinks: input.socialLinks ?? current.socialLinks,
     updatedAt: new Date().toISOString(),
   };
 
@@ -128,16 +159,20 @@ export function updateSiteSettings(input: Partial<SiteSettingsInput>) {
     return null;
   }
 
-  siteSettings = updated;
-  saveJsonFile("site-settings.json", siteSettings);
+  await persistSiteSettings(updated);
 
-  return siteSettings;
+  return updated;
 }
 
-export function resetSiteSettings() {
-  siteSettings = resetJsonFile("site-settings.json", fallbackSiteSettings);
+export async function resetSiteSettings() {
+  const resetValue = {
+    ...fallbackSiteSettings,
+    updatedAt: new Date().toISOString(),
+  };
 
-  return siteSettings;
+  await persistSiteSettings(resetValue);
+
+  return resetValue;
 }
 
 export function isSiteSettings(value: unknown): value is SiteSettings {
@@ -179,6 +214,28 @@ export function isSiteSettings(value: unknown): value is SiteSettings {
   );
 }
 
+async function persistSiteSettings(settings: SiteSettings) {
+  await executeSql(
+    `INSERT INTO admin_site_settings (setting_key, setting_value, description, is_public)
+     VALUES (?, CAST(? AS JSON), 'Pengaturan header, footer, brand, dan sosial website', TRUE)
+     ON DUPLICATE KEY UPDATE
+       setting_value = VALUES(setting_value), description = VALUES(description), is_public = TRUE`,
+    [settingKey, JSON.stringify(settings)],
+  );
+}
+
+function parseSettings(value: string | SiteSettings) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function isSiteLink(value: unknown): value is SiteLink {
   if (!value || typeof value !== "object") {
     return false;
@@ -211,4 +268,12 @@ function isSocialLink(value: unknown): value is SiteSocialLink {
 
 function hasText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function normalizeSqlDate(value: Date | string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }

@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type ProfileGeneralRecord = {
   id: string;
@@ -17,87 +18,118 @@ export type ProfileGeneralRecord = {
 
 export type ProfileGeneralInput = Omit<ProfileGeneralRecord, "id" | "updatedAt">;
 
-const initialProfileGeneralRecords: ProfileGeneralRecord[] = [
-  {
-    id: "0c7f0d5b-8534-4e1f-bb1b-9d0a6aa41a01",
-    slug: "desa-keseneng",
-    villageName: "Desa Keseneng",
-    district: "Mojotengah",
-    regency: "Wonosobo",
-    province: "Jawa Tengah",
-    character: "Agraris dan budaya",
-    description:
-      "Desa Keseneng berada di wilayah perbukitan dengan potensi pertanian, kesenian, UMKM, dan tradisi gotong royong warga.",
-    area: "328 ha",
-    elevation: "820 mdpl",
-    dominantLandUse: "Sawah dan kebun",
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-];
+type ProfileRow = RowDataPacket & {
+  id: string;
+  slug: string;
+  village_name: string;
+  hero_description: string;
+  updated_at: Date | string;
+};
 
-let profileGeneralRecords = loadJsonFile("profile-general.json", initialProfileGeneralRecords);
+type FactRow = RowDataPacket & {
+  label: string;
+  value: string;
+};
 
-export function listProfileGeneralRecords() {
-  return profileGeneralRecords;
-}
-
-export function getProfileGeneralRecord(id: string) {
-  return profileGeneralRecords.find((record) => record.id === id) ?? null;
-}
-
-export function createProfileGeneralRecord(input: ProfileGeneralInput) {
-  const now = new Date().toISOString();
-  const record: ProfileGeneralRecord = {
-    ...input,
-    id: crypto.randomUUID(),
-    updatedAt: now,
-  };
-
-  profileGeneralRecords = [...profileGeneralRecords, record];
-  saveJsonFile("profile-general.json", profileGeneralRecords);
-
-  return record;
-}
-
-export function updateProfileGeneralRecord(id: string, input: Partial<ProfileGeneralInput>) {
-  const existingRecord = getProfileGeneralRecord(id);
-
-  if (!existingRecord) {
-    return null;
-  }
-
-  const updatedRecord: ProfileGeneralRecord = {
-    ...existingRecord,
-    ...input,
-    id: existingRecord.id,
-    updatedAt: new Date().toISOString(),
-  };
-
-  profileGeneralRecords = profileGeneralRecords.map((record) =>
-    record.id === id ? updatedRecord : record,
+export async function listProfileGeneralRecords() {
+  const rows = await queryRows<ProfileRow>(
+    `SELECT id, slug, village_name, hero_description, updated_at
+     FROM village_profiles
+     WHERE is_active = TRUE
+     ORDER BY updated_at DESC`,
   );
-  saveJsonFile("profile-general.json", profileGeneralRecords);
 
-  return updatedRecord;
+  return Promise.all(rows.map(mapProfileGeneralRow));
 }
 
-export function deleteProfileGeneralRecord(id: string) {
-  const existingRecord = getProfileGeneralRecord(id);
+export async function getProfileGeneralRecord(id: string) {
+  const rows = await queryRows<ProfileRow>(
+    `SELECT id, slug, village_name, hero_description, updated_at
+     FROM village_profiles
+     WHERE id = ? OR slug = ?
+     LIMIT 1`,
+    [id, id],
+  );
+
+  return rows[0] ? mapProfileGeneralRow(rows[0]) : null;
+}
+
+export async function createProfileGeneralRecord(input: ProfileGeneralInput) {
+  const id = crypto.randomUUID();
+
+  await executeSql(
+    `INSERT INTO village_profiles
+     (id, slug, village_name, hero_eyebrow, hero_title, hero_description,
+      overview_kicker, overview_title, overview_description, overview_body,
+      history_kicker, history_title, history_description,
+      geography_kicker, geography_title, geography_description,
+      vision_label, vision_title, vision_description, is_active)
+     VALUES (?, ?, ?, 'Profil Desa', ?, ?, 'Gambaran Umum', ?, ?, ?,
+      'Sejarah Desa', 'Linimasa perkembangan desa.', 'Data sejarah desa.',
+      'Kondisi Geografis', 'Kondisi geografis desa.', 'Data geografis desa.',
+      'Visi Desa', 'Visi desa.', 'Misi desa.', TRUE)`,
+    [
+      id,
+      input.slug,
+      input.villageName,
+      `Mengenal ${input.villageName}, desa ${input.character.toLowerCase()}.`,
+      input.description,
+      `${input.villageName}, ruang tumbuh warga dan potensi lokal.`,
+      input.description,
+      `${input.villageName} berada di wilayah ${input.regency} dengan karakter ${input.character.toLowerCase()}. Wilayah ini memiliki luas ${input.area}, ketinggian ${input.elevation}, dan dominasi lahan ${input.dominantLandUse.toLowerCase()}.`,
+    ],
+  );
+  await replaceGeneralFacts(id, input);
+
+  return getProfileGeneralRecord(id);
+}
+
+export async function updateProfileGeneralRecord(id: string, input: Partial<ProfileGeneralInput>) {
+  const existingRecord = await getProfileGeneralRecord(id);
 
   if (!existingRecord) {
     return null;
   }
 
-  profileGeneralRecords = profileGeneralRecords.filter((record) => record.id !== id);
-  saveJsonFile("profile-general.json", profileGeneralRecords);
+  const updated = { ...existingRecord, ...input };
+
+  await executeSql(
+    `UPDATE village_profiles
+     SET slug = ?, village_name = ?, hero_title = ?, hero_description = ?,
+         overview_title = ?, overview_description = ?, overview_body = ?
+     WHERE id = ?`,
+    [
+      updated.slug,
+      updated.villageName,
+      `Mengenal ${updated.villageName}, desa ${updated.character.toLowerCase()}.`,
+      updated.description,
+      `${updated.villageName}, ruang tumbuh warga dan potensi lokal.`,
+      updated.description,
+      `${updated.villageName} berada di wilayah ${updated.regency} dengan karakter ${updated.character.toLowerCase()}. Wilayah ini memiliki luas ${updated.area}, ketinggian ${updated.elevation}, dan dominasi lahan ${updated.dominantLandUse.toLowerCase()}.`,
+      existingRecord.id,
+    ],
+  );
+  await replaceGeneralFacts(existingRecord.id, updated);
+
+  return getProfileGeneralRecord(existingRecord.id);
+}
+
+export async function deleteProfileGeneralRecord(id: string) {
+  const existingRecord = await getProfileGeneralRecord(id);
+
+  if (!existingRecord) {
+    return null;
+  }
+
+  await executeSql("DELETE FROM village_profiles WHERE id = ?", [existingRecord.id]);
 
   return existingRecord;
 }
 
-export function resetProfileGeneralRecords() {
-  profileGeneralRecords = resetJsonFile("profile-general.json", initialProfileGeneralRecords);
+export async function resetProfileGeneralRecords() {
+  await executeSql("UPDATE village_profiles SET is_active = TRUE WHERE slug = 'desa-keseneng'");
 
-  return profileGeneralRecords;
+  return listProfileGeneralRecords();
 }
 
 export function isProfileGeneralInput(value: unknown): value is ProfileGeneralInput {
@@ -124,3 +156,52 @@ export function isProfileGeneralInput(value: unknown): value is ProfileGeneralIn
   );
 }
 
+async function mapProfileGeneralRow(row: ProfileRow): Promise<ProfileGeneralRecord> {
+  const facts = await queryRows<FactRow>(
+    `SELECT label, value
+     FROM village_profile_facts
+     WHERE profile_id = ? AND section = 'hero'
+     ORDER BY display_order ASC`,
+    [row.id],
+  );
+  const byLabel = new Map(facts.map((fact) => [fact.label.toLowerCase(), fact.value]));
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    villageName: row.village_name,
+    district: byLabel.get("kecamatan") ?? "Mojotengah",
+    regency: byLabel.get("kabupaten") ?? "Wonosobo",
+    province: byLabel.get("provinsi") ?? "Jawa Tengah",
+    character: byLabel.get("karakter") ?? "Agraris dan budaya",
+    description: row.hero_description,
+    area: byLabel.get("luas wilayah") ?? "328 ha",
+    elevation: byLabel.get("ketinggian") ?? "820 mdpl",
+    dominantLandUse: byLabel.get("dominasi lahan") ?? "Sawah dan kebun",
+    updatedAt: normalizeSqlDate(row.updated_at),
+  };
+}
+
+async function replaceGeneralFacts(profileId: string, record: ProfileGeneralRecord | ProfileGeneralInput) {
+  await executeSql("DELETE FROM village_profile_facts WHERE profile_id = ? AND section = 'hero'", [profileId]);
+  const facts = [
+    ["Kecamatan", record.district],
+    ["Kabupaten", record.regency],
+    ["Provinsi", record.province],
+    ["Karakter", record.character],
+    ["Luas wilayah", record.area],
+    ["Ketinggian", record.elevation],
+    ["Dominasi lahan", record.dominantLandUse],
+  ];
+
+  for (const [index, fact] of facts.entries()) {
+    await executeSql(
+      "INSERT INTO village_profile_facts (id, profile_id, section, label, value, display_order) VALUES (?, ?, 'hero', ?, ?, ?)",
+      [crypto.randomUUID(), profileId, fact[0], fact[1], index + 1],
+    );
+  }
+}
+
+function normalizeSqlDate(value: Date | string) {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   }
 
   if (id) {
-    const record = getArtType(id);
+    const record = await getArtType(id);
 
     if (!record) {
       return Response.json({ error: "Jenis kesenian tidak ditemukan." }, { status: 404 });
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     return Response.json({ data: record });
   }
 
-  const records = listArtTypes(status && isArtCultureStatus(status) ? status : undefined);
+  const records = await listArtTypes(status && isArtCultureStatus(status) ? status : undefined);
 
   return Response.json({ data: records, meta: { total: records.length, status: status ?? null } });
 }
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Payload jenis kesenian belum lengkap atau tidak valid." }, { status: 400 });
   }
 
-  const record = createArtType(parsed.input);
+  const record = await createArtType(parsed.input);
 
   if (!record) {
     return Response.json({ error: "Slug jenis kesenian sudah dipakai." }, { status: 409 });
@@ -70,7 +70,7 @@ export async function PUT(request: Request) {
     return Response.json({ error: "ID atau slug jenis kesenian wajib dikirim." }, { status: 400 });
   }
 
-  const record = updateArtType(id, parsed.input);
+  const record = await updateArtType(id, parsed.input);
 
   if (!record) {
     return Response.json({ error: "Jenis kesenian tidak ditemukan." }, { status: 404 });
@@ -87,7 +87,7 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "ID jenis kesenian wajib dikirim." }, { status: 400 });
   }
 
-  const record = deleteArtType(id);
+  const record = await deleteArtType(id);
 
   if (!record) {
     return Response.json({ error: "Jenis kesenian tidak ditemukan." }, { status: 404 });

@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 export function PotentialDevelopmentPage() {
   return (
@@ -12,7 +12,7 @@ export function PotentialDevelopmentPage() {
             Potensi Desa
           </p>
           <h1 className="mt-8 text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-            Halaman potensi sedang dalam pengembangan.
+            Halaman potensi disiapkan untuk data desa.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-100 sm:text-lg">
             Informasi potensi Desa Keseneng sedang disusun agar data yang

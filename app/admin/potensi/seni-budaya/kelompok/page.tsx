@@ -3,9 +3,9 @@ import { listArtGroups, listArtTypes } from "@/lib/art-culture-store";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminKelompokSeniPage() {
-  const types = listArtTypes();
-  const groups = listArtGroups().map((group) => ({
+export default async function AdminKelompokSeniPage() {
+  const types = await listArtTypes();
+  const groups = (await listArtGroups()).map((group) => ({
     ...group,
     artTypeLabels: types.filter((type) => group.artTypeIds.includes(type.id)).map((type) => type.name),
   }));

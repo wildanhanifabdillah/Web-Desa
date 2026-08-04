@@ -8,6 +8,7 @@ import {
   listArtTypes,
   updateArtGroup,
   type ArtGroupInput,
+  type ArtGroupRecord,
 } from "@/lib/art-culture-store";
 import { saveUploadedFile } from "@/lib/upload-files";
 
@@ -25,18 +26,18 @@ export async function GET(request: Request) {
   }
 
   if (id) {
-    const record = getArtGroup(id);
+    const record = await getArtGroup(id);
 
     if (!record) {
       return Response.json({ error: "Kelompok seni tidak ditemukan." }, { status: 404 });
     }
 
-    return Response.json({ data: decorateGroup(record) });
+    return Response.json({ data: await decorateGroup(record) });
   }
 
-  const records = listArtGroups(status && isArtCultureStatus(status) ? status : undefined)
-    .filter((group) => artType ? group.artTypeIds.includes(artType) : true)
-    .map(decorateGroup);
+  const filteredRecords = (await listArtGroups(status && isArtCultureStatus(status) ? status : undefined))
+    .filter((group) => artType ? group.artTypeIds.includes(artType) : true);
+  const records = await Promise.all(filteredRecords.map(decorateGroup));
 
   return Response.json({ data: records, meta: { total: records.length, status: status ?? null, artType: artType ?? null } });
 }
@@ -52,13 +53,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Payload kelompok seni belum lengkap atau tidak valid." }, { status: 400 });
   }
 
-  const record = createArtGroup(parsed.input);
+  const record = await createArtGroup(parsed.input);
 
   if (!record) {
     return Response.json({ error: "Slug kelompok seni sudah dipakai." }, { status: 409 });
   }
 
-  return Response.json({ data: decorateGroup(record), meta: parsed.upload }, { status: 201 });
+  return Response.json({ data: await decorateGroup(record), meta: parsed.upload }, { status: 201 });
 }
 
 export async function PUT(request: Request) {
@@ -74,13 +75,13 @@ export async function PUT(request: Request) {
     return Response.json({ error: "ID atau slug kelompok seni wajib dikirim." }, { status: 400 });
   }
 
-  const record = updateArtGroup(id, parsed.input);
+  const record = await updateArtGroup(id, parsed.input);
 
   if (!record) {
     return Response.json({ error: "Kelompok seni tidak ditemukan." }, { status: 404 });
   }
 
-  return Response.json({ data: decorateGroup(record), meta: parsed.upload });
+  return Response.json({ data: await decorateGroup(record), meta: parsed.upload });
 }
 
 export async function DELETE(request: Request) {
@@ -91,13 +92,13 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "ID kelompok seni wajib dikirim." }, { status: 400 });
   }
 
-  const record = deleteArtGroup(id);
+  const record = await deleteArtGroup(id);
 
   if (!record) {
     return Response.json({ error: "Kelompok seni tidak ditemukan." }, { status: 404 });
   }
 
-  return Response.json({ data: decorateGroup(record) });
+  return Response.json({ data: await decorateGroup(record) });
 }
 
 async function parseArtGroupRequest(request: Request) {
@@ -165,8 +166,8 @@ async function parseArtGroupFormData(formData: FormData) {
   };
 }
 
-function decorateGroup(group: ReturnType<typeof listArtGroups>[number]) {
-  const types = listArtTypes();
+async function decorateGroup(group: ArtGroupRecord) {
+  const types = await listArtTypes();
 
   return {
     ...group,

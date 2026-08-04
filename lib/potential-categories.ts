@@ -42,7 +42,7 @@ const fallbackPotentialCategories: PotentialCategory[] = [
     "detail": {
       "eyebrow": "Potensi Wisata Alam",
       "intro": "Wisata alam Keseneng menonjolkan suasana perbukitan, titik pandang, dan pengalaman kunjungan yang tetap dekat dengan desa.",
-      "description": "Pengembangan wisata alam diarahkan untuk menata informasi lokasi, akses, dokumentasi visual, kebersihan area, serta cerita warga agar pengunjung mudah memahami karakter alam Desa Keseneng sebelum datang.",
+      "description": "Data wisata alam disiapkan untuk memuat nama lokasi, akses, dokumentasi visual, narahubung, dan catatan singkat yang bisa dilengkapi admin desa.",
       "opportunities": [
         "Pemetaan titik kunjungan alam dan jalur akses warga.",
         "Publikasi foto, rute, dan aturan kunjungan yang ramah pengunjung.",
@@ -77,7 +77,7 @@ const fallbackPotentialCategories: PotentialCategory[] = [
       },
       {
         "title": "Ruang alam warga",
-        "description": "Area terbuka desa yang dapat dikembangkan sebagai pengalaman wisata.",
+        "description": "Area terbuka desa yang didokumentasikan sebagai bagian dari potensi wisata.",
         "image": "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=900&q=80"
       }
     ],
@@ -101,7 +101,7 @@ const fallbackPotentialCategories: PotentialCategory[] = [
     "detail": {
       "eyebrow": "Potensi Agro Tourism",
       "intro": "Agro tourism menghubungkan aktivitas pertanian warga dengan pengalaman belajar, melihat proses tanam, dan mengenal komoditas desa.",
-      "description": "Pengembangan agro tourism diarahkan pada pendataan lahan produktif, komoditas unggulan, kelompok tani, agenda panen, serta aktivitas edukasi yang dapat ditampilkan secara rapi di website desa.",
+      "description": "Data agro tourism disiapkan untuk memuat lahan produktif, komoditas unggulan, kelompok tani, agenda panen, dan dokumentasi aktivitas yang bisa dilengkapi admin desa.",
       "opportunities": [
         "Pemetaan komoditas sawah dan kebun berdasarkan musim tanam.",
         "Publikasi aktivitas kelompok tani dan periode panen.",
@@ -190,7 +190,7 @@ const fallbackPotentialCategories: PotentialCategory[] = [
       },
       {
         "title": "Kemasan produk lokal",
-        "description": "Penguatan kemasan membantu produk tampil lebih siap pasar.",
+        "description": "Kemasan produk lokal menjadi bagian dari identitas usaha warga.",
         "image": "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=900&q=80"
       },
       {
@@ -219,7 +219,7 @@ const fallbackPotentialCategories: PotentialCategory[] = [
     "detail": {
       "eyebrow": "Potensi Seni & Budaya",
       "intro": "Seni dan budaya warga menjadi ruang ekspresi, regenerasi tradisi, dan penguatan identitas Desa Keseneng.",
-      "description": "Pengelolaan potensi seni budaya diarahkan untuk mendokumentasikan jenis kesenian, kelompok seni aktif, jadwal latihan, agenda pentas, dan cerita budaya agar identitas desa tampil lebih kuat di kanal digital.",
+      "description": "Data seni budaya disiapkan untuk memuat jenis kesenian, kelompok aktif, jadwal latihan, agenda pentas, dan dokumentasi cerita budaya yang bisa dilengkapi admin desa.",
       "opportunities": [
         "Arsip foto dan narasi kelompok seni desa.",
         "Publikasi agenda pentas budaya dan kegiatan latihan.",

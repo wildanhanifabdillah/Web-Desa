@@ -1,3 +1,6 @@
+import type { RowDataPacket } from "mysql2";
+import { queryRows, type SqlValue } from "@/lib/db";
+
 export type StatisticMetric = {
   id: string;
   label: string;
@@ -22,97 +25,110 @@ export type StatisticSection = {
   items: StatisticChartItem[];
 };
 
-const statisticsOverview: StatisticMetric[] = [
-  {
-    id: "penduduk",
-    label: "Penduduk",
-    value: 4210,
-    unit: "jiwa",
-    description: "Jumlah penduduk yang tercatat dalam data desa.",
-  },
-  {
-    id: "kepala-keluarga",
-    label: "Kepala Keluarga",
-    value: 1286,
-    unit: "KK",
-    description: "Jumlah kepala keluarga sebagai basis layanan administrasi.",
-  },
-  {
-    id: "dusun",
-    label: "Dusun",
-    value: 6,
-    unit: "dusun",
-    description: "Wilayah dusun yang menjadi cakupan pelayanan Desa Keseneng.",
-  },
-  {
-    id: "rt-rw",
-    label: "RT/RW",
-    value: 34,
-    unit: "unit",
-    description: "Gabungan unit RT dan RW dalam struktur kewilayahan desa.",
-  },
-];
+type StatisticMetricRow = RowDataPacket & {
+  slug: string;
+  label: string;
+  value_number: number;
+  unit: string;
+  description: string | null;
+};
 
-const statisticSections: StatisticSection[] = [
-  {
-    id: "usia",
-    title: "Komposisi Usia",
-    description:
-      "Sebaran penduduk berdasarkan kelompok usia untuk membantu membaca kebutuhan layanan pendidikan, produktivitas, dan sosial.",
-    totalLabel: "Total penduduk",
-    totalValue: 4210,
-    unit: "jiwa",
-    items: [
-      { label: "0-14 tahun", value: 842, colorClassName: "bg-sage-600" },
-      { label: "15-24 tahun", value: 694, colorClassName: "bg-emerald-500" },
-      { label: "25-54 tahun", value: 1845, colorClassName: "bg-sky-500" },
-      { label: "55+ tahun", value: 829, colorClassName: "bg-amber-500" },
-    ],
-  },
-  {
-    id: "pendidikan",
-    title: "Tingkat Pendidikan",
-    description:
-      "Sebaran tingkat pendidikan warga sebagai gambaran kebutuhan program literasi dan pelatihan.",
-    totalLabel: "Warga terdata",
-    totalValue: 3510,
-    unit: "orang",
-    items: [
-      { label: "SD/sederajat", value: 1180, colorClassName: "bg-sage-600" },
-      { label: "SMP/sederajat", value: 875, colorClassName: "bg-emerald-500" },
-      { label: "SMA/sederajat", value: 1025, colorClassName: "bg-sky-500" },
-      { label: "Perguruan tinggi", value: 430, colorClassName: "bg-indigo-500" },
-    ],
-  },
-  {
-    id: "pekerjaan",
-    title: "Mata Pencaharian",
-    description:
-      "Sebaran pekerjaan utama warga yang mendukung arah pengembangan ekonomi dan potensi desa.",
-    totalLabel: "Warga bekerja",
-    totalValue: 2460,
-    unit: "orang",
-    items: [
-      { label: "Petani", value: 980, colorClassName: "bg-sage-600" },
-      { label: "Wiraswasta/UMKM", value: 520, colorClassName: "bg-emerald-500" },
-      { label: "Buruh", value: 610, colorClassName: "bg-orange-500" },
-      { label: "PNS/karyawan", value: 350, colorClassName: "bg-sky-500" },
-    ],
-  },
-];
+type StatisticSectionRow = RowDataPacket & {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  total_label: string;
+  total_value: number;
+  unit: string;
+};
+
+type StatisticChartItemRow = RowDataPacket & {
+  section_id: string;
+  label: string;
+  value_number: number;
+  color_token: string;
+};
 
 export async function getVillageStatisticsOverview() {
-  return statisticsOverview;
+  const rows = await queryRows<StatisticMetricRow>(
+    `SELECT slug, label, value_number, unit, description
+     FROM data_statistik
+     WHERE status = 'published' AND is_featured = TRUE
+     ORDER BY display_order ASC, label ASC`,
+  );
+
+  return rows.map(mapMetricRow);
 }
 
 export async function getVillageStatisticSections() {
-  return statisticSections;
+  const sections = await queryRows<StatisticSectionRow>(
+    `SELECT id, slug, title, description, total_label, total_value, unit
+     FROM statistic_sections
+     WHERE status = 'published'
+     ORDER BY display_order ASC, title ASC`,
+  );
+
+  return hydrateSections(sections);
 }
+
 export async function getVillageStatisticSectionByCategory(category: string) {
   const normalizedCategory = category.trim().toLowerCase();
+  const rows = await queryRows<StatisticSectionRow>(
+    `SELECT id, slug, title, description, total_label, total_value, unit
+     FROM statistic_sections
+     WHERE status = 'published' AND (LOWER(slug) = ? OR LOWER(title) = ?)
+     LIMIT 1`,
+    [normalizedCategory, normalizedCategory],
+  );
+  const sections = await hydrateSections(rows);
 
-  return statisticSections.find((section) => {
-    return section.id.toLowerCase() === normalizedCategory ||
-      section.title.toLowerCase() === normalizedCategory;
-  }) ?? null;
+  return sections[0] ?? null;
+}
+
+async function hydrateSections(rows: StatisticSectionRow[]) {
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const sectionIds = rows.map((row) => row.id);
+  const placeholders = sectionIds.map(() => "?").join(", ");
+  const items = await queryRows<StatisticChartItemRow>(
+    `SELECT section_id, label, value_number, color_token
+     FROM statistic_chart_items
+     WHERE section_id IN (${placeholders})
+     ORDER BY display_order ASC, label ASC`,
+    sectionIds as SqlValue[],
+  );
+  const itemsBySection = new Map<string, StatisticChartItem[]>();
+
+  for (const item of items) {
+    const current = itemsBySection.get(item.section_id) ?? [];
+    current.push({
+      label: item.label,
+      value: Number(item.value_number),
+      colorClassName: item.color_token,
+    });
+    itemsBySection.set(item.section_id, current);
+  }
+
+  return rows.map((row) => ({
+    id: row.slug,
+    title: row.title,
+    description: row.description,
+    totalLabel: row.total_label,
+    totalValue: Number(row.total_value),
+    unit: row.unit,
+    items: itemsBySection.get(row.id) ?? [],
+  }));
+}
+
+function mapMetricRow(row: StatisticMetricRow): StatisticMetric {
+  return {
+    id: row.slug,
+    label: row.label,
+    value: Number(row.value_number),
+    unit: row.unit,
+    description: row.description ?? "",
+  };
 }

@@ -27,7 +27,7 @@ INSERT INTO village_profiles (
   'Desa Keseneng',
   'Profil Desa',
   'Mengenal Desa Keseneng, desa agraris dengan tradisi yang hidup.',
-  'Halaman profil menyajikan gambaran umum, sejarah, visi misi, geografis, dan perangkat Desa Keseneng sebagai dasar informasi publik untuk warga dan pengunjung.',
+  'Halaman profil menyajikan gambaran umum, kondisi geografis, visi misi, dan perangkat Desa Keseneng sebagai dasar informasi publik untuk warga dan pengunjung.',
   'Gambaran Umum',
   'Desa yang bergerak dengan kekuatan warga dan potensi lokal.',
   'Gambaran umum ini menampilkan informasi profil yang dikelola melalui panel admin desa.',

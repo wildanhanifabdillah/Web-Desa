@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const id = searchParams.get("id");
 
   if (id) {
-    const record = getVisionMissionRecord(id);
+    const record = await getVisionMissionRecord(id);
 
     if (!record) {
       return Response.json({ error: "Visi dan misi tidak ditemukan." }, { status: 404 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     return Response.json({ data: record });
   }
 
-  return Response.json({ data: listVisionMissionRecords() });
+  return Response.json({ data: await listVisionMissionRecords() });
 }
 
 export async function POST(request: Request) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const record = createVisionMissionRecord(body);
+  const record = await createVisionMissionRecord(body);
 
   return Response.json({ data: record }, { status: 201 });
 }
@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
   }
 
   const { id, ...input } = body as { id: string } & Record<string, unknown>;
-  const record = updateVisionMissionRecord(id, input);
+  const record = await updateVisionMissionRecord(id, input);
 
   if (!record) {
     return Response.json({ error: "Visi dan misi tidak ditemukan." }, { status: 404 });
@@ -63,14 +63,14 @@ export async function DELETE(request: Request) {
   const reset = searchParams.get("reset") === "true";
 
   if (reset) {
-    return Response.json({ data: resetVisionMissionRecords() });
+    return Response.json({ data: await resetVisionMissionRecords() });
   }
 
   if (!id) {
     return Response.json({ error: "ID visi dan misi wajib dikirim." }, { status: 400 });
   }
 
-  const record = deleteVisionMissionRecord(id);
+  const record = await deleteVisionMissionRecord(id);
 
   if (!record) {
     return Response.json({ error: "Visi dan misi tidak ditemukan." }, { status: 404 });

@@ -1,11 +1,6 @@
-import {
-  getGalleryAlbums,
-  getGalleryVideos,
-  type GalleryAlbum,
-  type GalleryPhoto,
-  type GalleryVideo,
-} from "@/lib/gallery";
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows, type SqlValue } from "@/lib/db";
+import type { GalleryAlbum, GalleryPhoto, GalleryVideo } from "@/lib/gallery";
 
 export type GalleryAlbumInput = Omit<GalleryAlbum, "id" | "photoCount" | "updatedAt"> & {
   id?: string;
@@ -17,163 +12,256 @@ export type GalleryVideoInput = Omit<GalleryVideo, "id"> & {
   id?: string;
 };
 
-let galleryAlbums: GalleryAlbum[] | null = null;
-let galleryVideos: GalleryVideo[] | null = null;
+type AlbumRow = RowDataPacket & {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  description: string;
+  cover_image_url: string;
+  cover_image_alt: string;
+  updated_at: Date | string;
+};
+
+type PhotoRow = RowDataPacket & {
+  id: string;
+  album_id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  taken_at: Date | string | null;
+  display_order: number;
+};
+
+type VideoRow = RowDataPacket & {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  duration_seconds: number | null;
+  published_at: Date | string | null;
+};
 
 export async function listGalleryAlbumRecords() {
-  if (!galleryAlbums) {
-    galleryAlbums = loadJsonFile("gallery-albums.json", await getGalleryAlbums());
-  }
+  const rows = await queryRows<AlbumRow>(
+    `SELECT id, slug, title, category, description, cover_image_url, cover_image_alt, updated_at
+     FROM gallery_albums
+     WHERE status = 'published'
+     ORDER BY display_order ASC, COALESCE(published_at, updated_at) DESC`,
+  );
 
-  return galleryAlbums ?? [];
+  return hydrateAlbums(rows);
 }
 
 export async function getGalleryAlbumRecord(slug: string) {
-  const albums = await listGalleryAlbumRecords();
+  const rows = await queryRows<AlbumRow>(
+    `SELECT id, slug, title, category, description, cover_image_url, cover_image_alt, updated_at
+     FROM gallery_albums
+     WHERE id = ? OR slug = ?
+     LIMIT 1`,
+    [slug, slug],
+  );
+  const albums = await hydrateAlbums(rows);
 
-  return albums.find((album) => album.slug === slug || album.id === slug) ?? null;
+  return albums[0] ?? null;
 }
 
 export async function createGalleryAlbumRecord(input: GalleryAlbumInput) {
-  const albums = await listGalleryAlbumRecords();
   const slug = normalizeSlug(input.slug || input.title);
+  const existing = await getGalleryAlbumRecord(slug);
 
-  if (albums.some((album) => album.slug === slug || album.id === input.id)) {
+  if (existing || input.id && await getGalleryAlbumRecord(input.id)) {
     return null;
   }
 
-  const photos = normalizePhotos(input.photos);
-  const album: GalleryAlbum = {
-    ...input,
-    id: input.id?.trim() || crypto.randomUUID(),
-    slug,
-    photoCount: photos.length,
-    updatedAt: input.updatedAt || new Date().toISOString(),
-    photos,
-  };
+  const id = input.id?.trim() || crypto.randomUUID();
+  const orderRows = await queryRows<RowDataPacket & { next_order: number }>(
+    "SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM gallery_albums",
+  );
 
-  galleryAlbums = [album, ...albums];
-  saveJsonFile("gallery-albums.json", galleryAlbums);
+  await executeSql(
+    `INSERT INTO gallery_albums
+     (id, slug, title, category, description, cover_image_url, cover_image_alt, status, published_at, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?)`,
+    [
+      id,
+      slug,
+      input.title,
+      input.category,
+      input.description,
+      input.coverImage,
+      input.title,
+      toMysqlDateTime(input.updatedAt ?? new Date().toISOString()),
+      orderRows[0]?.next_order ?? 1,
+    ],
+  );
+  await replaceAlbumPhotos(id, normalizePhotos(input.photos));
+
+  return getGalleryAlbumRecord(slug);
+}
+
+export async function updateGalleryAlbumRecord(idOrSlug: string, input: Partial<GalleryAlbumInput>) {
+  const current = await getAlbumRow(idOrSlug);
+
+  if (!current) {
+    return null;
+  }
+
+  const existingAlbum = (await hydrateAlbums([current]))[0];
+  const nextSlug = input.slug ? normalizeSlug(input.slug) : existingAlbum.slug;
+
+  if (nextSlug !== existingAlbum.slug && await getGalleryAlbumRecord(nextSlug)) {
+    return null;
+  }
+
+  const updatedAt = new Date().toISOString();
+
+  await executeSql(
+    `UPDATE gallery_albums
+     SET slug = ?, title = ?, category = ?, description = ?, cover_image_url = ?, cover_image_alt = ?, published_at = ?
+     WHERE id = ?`,
+    [
+      nextSlug,
+      input.title ?? existingAlbum.title,
+      input.category ?? existingAlbum.category,
+      input.description ?? existingAlbum.description,
+      input.coverImage ?? existingAlbum.coverImage,
+      input.title ?? existingAlbum.title,
+      toMysqlDateTime(updatedAt),
+      current.id,
+    ],
+  );
+
+  if (input.photos) {
+    await replaceAlbumPhotos(current.id, normalizePhotos(input.photos));
+  }
+
+  return getGalleryAlbumRecord(nextSlug);
+}
+
+export async function deleteGalleryAlbumRecord(idOrSlug: string) {
+  const album = await getGalleryAlbumRecord(idOrSlug);
+
+  if (!album) {
+    return null;
+  }
+
+  await executeSql("DELETE FROM gallery_albums WHERE id = ?", [album.id]);
 
   return album;
 }
 
-export async function updateGalleryAlbumRecord(idOrSlug: string, input: Partial<GalleryAlbumInput>) {
-  const albums = await listGalleryAlbumRecords();
-  const existingAlbum = albums.find((album) => album.id === idOrSlug || album.slug === idOrSlug);
-
-  if (!existingAlbum) {
-    return null;
-  }
-
-  const photos = input.photos ? normalizePhotos(input.photos) : existingAlbum.photos;
-  const updatedAlbum: GalleryAlbum = {
-    ...existingAlbum,
-    ...input,
-    id: existingAlbum.id,
-    slug: input.slug ? normalizeSlug(input.slug) : existingAlbum.slug,
-    photoCount: photos.length,
-    updatedAt: new Date().toISOString(),
-    photos,
-  };
-
-  galleryAlbums = albums.map((album) => album.id === existingAlbum.id ? updatedAlbum : album);
-  saveJsonFile("gallery-albums.json", galleryAlbums);
-
-  return updatedAlbum;
-}
-
-export async function deleteGalleryAlbumRecord(idOrSlug: string) {
-  const albums = await listGalleryAlbumRecords();
-  const existingAlbum = albums.find((album) => album.id === idOrSlug || album.slug === idOrSlug);
-
-  if (!existingAlbum) {
-    return null;
-  }
-
-  galleryAlbums = albums.filter((album) => album.id !== existingAlbum.id);
-  saveJsonFile("gallery-albums.json", galleryAlbums);
-
-  return existingAlbum;
-}
-
 export async function resetGalleryAlbumRecords() {
-  galleryAlbums = resetJsonFile("gallery-albums.json", await getGalleryAlbums());
+  await executeSql("DELETE FROM gallery_albums");
 
-  return galleryAlbums;
+  return listGalleryAlbumRecords();
 }
 
 export async function listGalleryVideoRecords() {
-  if (!galleryVideos) {
-    galleryVideos = loadJsonFile("gallery-videos.json", await getGalleryVideos());
-  }
+  const rows = await queryRows<VideoRow>(
+    `SELECT id, slug, title, description, thumbnail_url, duration_seconds, published_at
+     FROM gallery_videos
+     WHERE status = 'published'
+     ORDER BY display_order ASC, COALESCE(published_at, updated_at) DESC`,
+  );
 
-  return galleryVideos ?? [];
+  return rows.map(mapVideoRow);
 }
 
 export async function getGalleryVideoRecord(id: string) {
-  const videos = await listGalleryVideoRecords();
+  const rows = await queryRows<VideoRow>(
+    `SELECT id, slug, title, description, thumbnail_url, duration_seconds, published_at
+     FROM gallery_videos
+     WHERE id = ? OR slug = ?
+     LIMIT 1`,
+    [id, id],
+  );
 
-  return videos.find((video) => video.id === id) ?? null;
+  return rows[0] ? mapVideoRow(rows[0]) : null;
 }
 
 export async function createGalleryVideoRecord(input: GalleryVideoInput) {
-  const videos = await listGalleryVideoRecords();
-  const id = input.id?.trim() || normalizeSlug(input.title);
+  const slug = normalizeSlug(input.id?.trim() || input.title);
 
-  if (videos.some((video) => video.id === id)) {
+  if (await getGalleryVideoRecord(slug)) {
     return null;
   }
 
-  const video: GalleryVideo = {
-    ...input,
-    id,
-  };
+  const orderRows = await queryRows<RowDataPacket & { next_order: number }>(
+    "SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM gallery_videos",
+  );
 
-  galleryVideos = [video, ...videos];
-  saveJsonFile("gallery-videos.json", galleryVideos);
+  await executeSql(
+    `INSERT INTO gallery_videos
+     (id, slug, title, description, thumbnail_url, thumbnail_alt, duration_seconds, status, published_at, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?)`,
+    [
+      crypto.randomUUID(),
+      slug,
+      input.title,
+      input.description,
+      input.thumbnail,
+      input.title,
+      parseDuration(input.duration),
+      toMysqlDateTime(input.publishedAt),
+      orderRows[0]?.next_order ?? 1,
+    ],
+  );
+
+  return getGalleryVideoRecord(slug);
+}
+
+export async function updateGalleryVideoRecord(id: string, input: Partial<GalleryVideoInput>) {
+  const current = await getVideoRow(id);
+
+  if (!current) {
+    return null;
+  }
+
+  const existing = mapVideoRow(current);
+  const nextSlug = input.id ? normalizeSlug(input.id) : current.slug;
+
+  if (nextSlug !== current.slug && await getGalleryVideoRecord(nextSlug)) {
+    return null;
+  }
+
+  await executeSql(
+    `UPDATE gallery_videos
+     SET slug = ?, title = ?, description = ?, thumbnail_url = ?, thumbnail_alt = ?, duration_seconds = ?, published_at = ?
+     WHERE id = ?`,
+    [
+      nextSlug,
+      input.title ?? existing.title,
+      input.description ?? existing.description,
+      input.thumbnail ?? existing.thumbnail,
+      input.title ?? existing.title,
+      parseDuration(input.duration ?? existing.duration),
+      toMysqlDateTime(input.publishedAt ?? existing.publishedAt),
+      current.id,
+    ],
+  );
+
+  return getGalleryVideoRecord(nextSlug);
+}
+
+export async function deleteGalleryVideoRecord(id: string) {
+  const video = await getGalleryVideoRecord(id);
+
+  if (!video) {
+    return null;
+  }
+
+  const current = await getVideoRow(id);
+  await executeSql("DELETE FROM gallery_videos WHERE id = ?", [current?.id ?? id]);
 
   return video;
 }
 
-export async function updateGalleryVideoRecord(id: string, input: Partial<GalleryVideoInput>) {
-  const videos = await listGalleryVideoRecords();
-  const existingVideo = videos.find((video) => video.id === id);
-
-  if (!existingVideo) {
-    return null;
-  }
-
-  const updatedVideo: GalleryVideo = {
-    ...existingVideo,
-    ...input,
-    id: existingVideo.id,
-  };
-
-  galleryVideos = videos.map((video) => video.id === existingVideo.id ? updatedVideo : video);
-  saveJsonFile("gallery-videos.json", galleryVideos);
-
-  return updatedVideo;
-}
-
-export async function deleteGalleryVideoRecord(id: string) {
-  const videos = await listGalleryVideoRecords();
-  const existingVideo = videos.find((video) => video.id === id);
-
-  if (!existingVideo) {
-    return null;
-  }
-
-  galleryVideos = videos.filter((video) => video.id !== existingVideo.id);
-  saveJsonFile("gallery-videos.json", galleryVideos);
-
-  return existingVideo;
-}
-
 export async function resetGalleryVideoRecords() {
-  galleryVideos = resetJsonFile("gallery-videos.json", await getGalleryVideos());
+  await executeSql("DELETE FROM gallery_videos");
 
-  return galleryVideos;
+  return listGalleryVideoRecords();
 }
 
 export function isGalleryAlbumInput(value: unknown): value is GalleryAlbumInput {
@@ -220,13 +308,208 @@ export function isGalleryVideoInput(value: unknown): value is GalleryVideoInput 
   );
 }
 
+export async function createGalleryPhotoRecord(albumSlug: string, input: Omit<GalleryPhoto, "id"> & { id?: string }) {
+  const albumRow = await getAlbumRow(albumSlug);
+
+  if (!albumRow) {
+    return null;
+  }
+
+  const photo: GalleryPhoto = {
+    id: input.id?.trim() || crypto.randomUUID(),
+    title: input.title.trim(),
+    description: input.description.trim(),
+    image: input.image.trim(),
+    takenAt: input.takenAt.trim(),
+  };
+  const orderRows = await queryRows<RowDataPacket & { next_order: number }>(
+    "SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM gallery_photos WHERE album_id = ?",
+    [albumRow.id],
+  );
+
+  await executeSql(
+    `INSERT INTO gallery_photos
+     (id, album_id, title, description, image_url, image_alt, taken_at, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [photo.id, albumRow.id, photo.title, photo.description, photo.image, photo.title, toMysqlDateTime(photo.takenAt), orderRows[0]?.next_order ?? 1],
+  );
+
+  return { album: await getGalleryAlbumRecord(albumRow.slug), photo };
+}
+
+export async function updateGalleryPhotoRecord(albumSlug: string, photoId: string, input: Partial<GalleryPhoto>) {
+  const albumRow = await getAlbumRow(albumSlug);
+
+  if (!albumRow) {
+    return null;
+  }
+
+  const rows = await queryRows<PhotoRow>(
+    `SELECT id, album_id, title, description, image_url, taken_at, display_order
+     FROM gallery_photos
+     WHERE album_id = ? AND id = ?
+     LIMIT 1`,
+    [albumRow.id, photoId],
+  );
+  const current = rows[0];
+
+  if (!current) {
+    return null;
+  }
+
+  const existingPhoto = mapPhotoRow(current);
+  const updatedPhoto: GalleryPhoto = {
+    ...existingPhoto,
+    ...input,
+    id: existingPhoto.id,
+    title: input.title?.trim() ?? existingPhoto.title,
+    description: input.description?.trim() ?? existingPhoto.description,
+    image: input.image?.trim() ?? existingPhoto.image,
+    takenAt: input.takenAt?.trim() ?? existingPhoto.takenAt,
+  };
+
+  if (!isGalleryPhoto(updatedPhoto)) {
+    return null;
+  }
+
+  await executeSql(
+    "UPDATE gallery_photos SET title = ?, description = ?, image_url = ?, image_alt = ?, taken_at = ? WHERE id = ?",
+    [updatedPhoto.title, updatedPhoto.description, updatedPhoto.image, updatedPhoto.title, toMysqlDateTime(updatedPhoto.takenAt), current.id],
+  );
+
+  return { album: await getGalleryAlbumRecord(albumRow.slug), photo: updatedPhoto };
+}
+
+export async function deleteGalleryPhotoRecord(albumSlug: string, photoId: string) {
+  const albumRow = await getAlbumRow(albumSlug);
+
+  if (!albumRow) {
+    return null;
+  }
+
+  const rows = await queryRows<PhotoRow>(
+    `SELECT id, album_id, title, description, image_url, taken_at, display_order
+     FROM gallery_photos
+     WHERE album_id = ? AND id = ?
+     LIMIT 1`,
+    [albumRow.id, photoId],
+  );
+  const current = rows[0];
+
+  if (!current) {
+    return null;
+  }
+
+  const photo = mapPhotoRow(current);
+  await executeSql("DELETE FROM gallery_photos WHERE id = ?", [current.id]);
+
+  return { album: await getGalleryAlbumRecord(albumRow.slug), photo };
+}
+
+async function getAlbumRow(idOrSlug: string) {
+  const rows = await queryRows<AlbumRow>(
+    `SELECT id, slug, title, category, description, cover_image_url, cover_image_alt, updated_at
+     FROM gallery_albums
+     WHERE id = ? OR slug = ?
+     LIMIT 1`,
+    [idOrSlug, idOrSlug],
+  );
+
+  return rows[0] ?? null;
+}
+
+async function getVideoRow(idOrSlug: string) {
+  const rows = await queryRows<VideoRow>(
+    `SELECT id, slug, title, description, thumbnail_url, duration_seconds, published_at
+     FROM gallery_videos
+     WHERE id = ? OR slug = ?
+     LIMIT 1`,
+    [idOrSlug, idOrSlug],
+  );
+
+  return rows[0] ?? null;
+}
+
+async function hydrateAlbums(rows: AlbumRow[]) {
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const ids = rows.map((row) => row.id);
+  const placeholders = ids.map(() => "?").join(", ");
+  const photos = await queryRows<PhotoRow>(
+    `SELECT id, album_id, title, description, image_url, taken_at, display_order
+     FROM gallery_photos
+     WHERE album_id IN (${placeholders})
+     ORDER BY display_order ASC, taken_at DESC`,
+    ids as SqlValue[],
+  );
+  const photosByAlbum = new Map<string, GalleryPhoto[]>();
+
+  for (const photo of photos) {
+    const current = photosByAlbum.get(photo.album_id) ?? [];
+    current.push(mapPhotoRow(photo));
+    photosByAlbum.set(photo.album_id, current);
+  }
+
+  return rows.map((row) => {
+    const albumPhotos = photosByAlbum.get(row.id) ?? [];
+
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      category: row.category,
+      description: row.description,
+      coverImage: row.cover_image_url,
+      photoCount: albumPhotos.length,
+      updatedAt: normalizeSqlDate(row.updated_at) ?? new Date().toISOString(),
+      photos: albumPhotos,
+    };
+  });
+}
+
+async function replaceAlbumPhotos(albumId: string, photos: GalleryPhoto[]) {
+  await executeSql("DELETE FROM gallery_photos WHERE album_id = ?", [albumId]);
+
+  for (const [index, photo] of photos.entries()) {
+    await executeSql(
+      `INSERT INTO gallery_photos
+       (id, album_id, title, description, image_url, image_alt, taken_at, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [photo.id, albumId, photo.title, photo.description, photo.image, photo.title, toMysqlDateTime(photo.takenAt), index + 1],
+    );
+  }
+}
+
+function mapPhotoRow(row: PhotoRow): GalleryPhoto {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    image: row.image_url,
+    takenAt: normalizeSqlDate(row.taken_at) ?? new Date().toISOString(),
+  };
+}
+
+function mapVideoRow(row: VideoRow): GalleryVideo {
+  return {
+    id: row.slug,
+    title: row.title,
+    description: row.description,
+    thumbnail: row.thumbnail_url,
+    duration: formatDuration(row.duration_seconds),
+    publishedAt: normalizeSqlDate(row.published_at) ?? new Date().toISOString(),
+  };
+}
+
 function normalizePhotos(photos: GalleryPhoto[]) {
-  return photos.map((photo, index) => ({
-    id: photo.id?.trim() || `foto-${index + 1}`,
+  return photos.map((photo) => ({
+    id: photo.id?.trim() || crypto.randomUUID(),
     title: photo.title.trim(),
     description: photo.description.trim(),
     image: photo.image.trim(),
-    takenAt: photo.takenAt.trim(),
+    takenAt: photo.takenAt.trim() || new Date().toISOString(),
   }));
 }
 
@@ -260,100 +543,45 @@ function normalizeSlug(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
-export async function createGalleryPhotoRecord(albumSlug: string, input: Omit<GalleryPhoto, "id"> & { id?: string }) {
-  const albums = await listGalleryAlbumRecords();
-  const album = albums.find((candidate) => candidate.slug === albumSlug || candidate.id === albumSlug);
+function parseDuration(value: string) {
+  const parts = value.split(":").map((part) => Number.parseInt(part, 10));
 
-  if (!album) {
-    return null;
+  if (parts.length === 2 && parts.every(Number.isFinite)) {
+    return parts[0] * 60 + parts[1];
   }
 
-  const photo: GalleryPhoto = {
-    id: input.id?.trim() || crypto.randomUUID(),
-    title: input.title.trim(),
-    description: input.description.trim(),
-    image: input.image.trim(),
-    takenAt: input.takenAt.trim(),
-  };
-
-  const updatedAlbum: GalleryAlbum = {
-    ...album,
-    photos: [...album.photos, photo],
-    photoCount: album.photos.length + 1,
-    updatedAt: new Date().toISOString(),
-  };
-
-  galleryAlbums = albums.map((candidate) => candidate.id === album.id ? updatedAlbum : candidate);
-  saveJsonFile("gallery-albums.json", galleryAlbums);
-
-  return { album: updatedAlbum, photo };
+  return null;
 }
 
-export async function updateGalleryPhotoRecord(albumSlug: string, photoId: string, input: Partial<GalleryPhoto>) {
-  const albums = await listGalleryAlbumRecords();
-  const album = albums.find((candidate) => candidate.slug === albumSlug || candidate.id === albumSlug);
-
-  if (!album) {
-    return null;
+function formatDuration(value: number | null) {
+  if (!value || value < 0) {
+    return "00:00";
   }
 
-  const existingPhoto = album.photos.find((photo) => photo.id === photoId);
+  const minutes = Math.floor(value / 60).toString().padStart(2, "0");
+  const seconds = Math.floor(value % 60).toString().padStart(2, "0");
 
-  if (!existingPhoto) {
-    return null;
-  }
-
-  const updatedPhoto: GalleryPhoto = {
-    ...existingPhoto,
-    ...input,
-    id: existingPhoto.id,
-    title: input.title?.trim() ?? existingPhoto.title,
-    description: input.description?.trim() ?? existingPhoto.description,
-    image: input.image?.trim() ?? existingPhoto.image,
-    takenAt: input.takenAt?.trim() ?? existingPhoto.takenAt,
-  };
-
-  if (!isGalleryPhoto(updatedPhoto)) {
-    return null;
-  }
-
-  const updatedAlbum: GalleryAlbum = {
-    ...album,
-    photos: album.photos.map((photo) => photo.id === existingPhoto.id ? updatedPhoto : photo),
-    photoCount: album.photos.length,
-    updatedAt: new Date().toISOString(),
-  };
-
-  galleryAlbums = albums.map((candidate) => candidate.id === album.id ? updatedAlbum : candidate);
-  saveJsonFile("gallery-albums.json", galleryAlbums);
-
-  return { album: updatedAlbum, photo: updatedPhoto };
+  return `${minutes}:${seconds}`;
 }
 
-export async function deleteGalleryPhotoRecord(albumSlug: string, photoId: string) {
-  const albums = await listGalleryAlbumRecords();
-  const album = albums.find((candidate) => candidate.slug === albumSlug || candidate.id === albumSlug);
-
-  if (!album) {
+function normalizeSqlDate(value: Date | string | null) {
+  if (!value) {
     return null;
   }
 
-  const existingPhoto = album.photos.find((photo) => photo.id === photoId);
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
 
-  if (!existingPhoto) {
+function toMysqlDateTime(value: string | null | undefined) {
+  if (!value) {
     return null;
   }
 
-  const photos = album.photos.filter((photo) => photo.id !== existingPhoto.id);
-  const updatedAlbum: GalleryAlbum = {
-    ...album,
-    photos,
-    photoCount: photos.length,
-    updatedAt: new Date().toISOString(),
-  };
+  const date = new Date(value);
 
-  galleryAlbums = albums.map((candidate) => candidate.id === album.id ? updatedAlbum : candidate);
-  saveJsonFile("gallery-albums.json", galleryAlbums);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
 
-  return { album: updatedAlbum, photo: existingPhoto };
+  return date.toISOString().slice(0, 19).replace("T", " ");
 }

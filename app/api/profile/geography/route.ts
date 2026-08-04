@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const id = searchParams.get("id");
 
   if (id) {
-    const record = getGeographyRecord(id);
+    const record = await getGeographyRecord(id);
 
     if (!record) {
       return Response.json({ error: "Data geografis tidak ditemukan." }, { status: 404 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     return Response.json({ data: record });
   }
 
-  return Response.json({ data: listGeographyRecords() });
+  return Response.json({ data: await listGeographyRecords() });
 }
 
 export async function POST(request: Request) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const record = createGeographyRecord(body);
+  const record = await createGeographyRecord(body);
 
   return Response.json({ data: record }, { status: 201 });
 }
@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
   }
 
   const { id, ...input } = body as { id: string } & Record<string, unknown>;
-  const record = updateGeographyRecord(id, input);
+  const record = await updateGeographyRecord(id, input);
 
   if (!record) {
     return Response.json({ error: "Data geografis tidak ditemukan." }, { status: 404 });
@@ -63,14 +63,14 @@ export async function DELETE(request: Request) {
   const reset = searchParams.get("reset") === "true";
 
   if (reset) {
-    return Response.json({ data: resetGeographyRecords() });
+    return Response.json({ data: await resetGeographyRecords() });
   }
 
   if (!id) {
     return Response.json({ error: "ID data geografis wajib dikirim." }, { status: 400 });
   }
 
-  const record = deleteGeographyRecord(id);
+  const record = await deleteGeographyRecord(id);
 
   if (!record) {
     return Response.json({ error: "Data geografis tidak ditemukan." }, { status: 404 });

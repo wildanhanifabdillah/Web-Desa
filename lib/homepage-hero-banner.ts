@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type HomepageHeroBanner = {
   id: string;
@@ -19,6 +20,19 @@ export type HomepageHeroBanner = {
 
 export type HomepageHeroBannerInput = Omit<HomepageHeroBanner, "id">;
 
+type HeroRow = RowDataPacket & {
+  id: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  image_url: string;
+  image_alt: string;
+  primary_cta_label: string;
+  primary_cta_href: string;
+  secondary_cta_label: string | null;
+  secondary_cta_href: string | null;
+};
+
 const fallbackHeroBanner: HomepageHeroBanner = {
   id: "8f6b54a1-7d8f-4e50-9d8f-6b0d3c2a7a10",
   eyebrow: "Pemerintah Desa Keseneng",
@@ -37,34 +51,65 @@ const fallbackHeroBanner: HomepageHeroBanner = {
   },
 };
 
-let heroBanner = loadJsonFile("homepage-hero-banner.json", fallbackHeroBanner);
-
 export async function getActiveHomepageHeroBanner() {
-  return heroBanner;
+  const rows = await queryRows<HeroRow>(
+    `SELECT id, eyebrow, title, subtitle, image_url, image_alt, primary_cta_label,
+            primary_cta_href, secondary_cta_label, secondary_cta_href
+     FROM homepage_hero_banners
+     WHERE is_active = TRUE
+     ORDER BY display_order ASC
+     LIMIT 1`,
+  );
+
+  return rows[0] ? mapHeroRow(rows[0]) : fallbackHeroBanner;
 }
 
-export function updateHomepageHeroBanner(input: Partial<HomepageHeroBannerInput>) {
+export async function updateHomepageHeroBanner(input: Partial<HomepageHeroBannerInput>) {
+  const current = await getActiveHomepageHeroBanner();
   const nextHero: HomepageHeroBanner = {
-    ...heroBanner,
+    ...current,
     ...input,
-    primaryCta: input.primaryCta ?? heroBanner.primaryCta,
-    secondaryCta: input.secondaryCta === undefined ? heroBanner.secondaryCta : input.secondaryCta,
+    primaryCta: input.primaryCta ?? current.primaryCta,
+    secondaryCta: input.secondaryCta === undefined ? current.secondaryCta : input.secondaryCta,
   };
 
   if (!isHomepageHeroBanner(nextHero)) {
     return null;
   }
 
-  heroBanner = nextHero;
-  saveJsonFile("homepage-hero-banner.json", heroBanner);
+  await executeSql(
+    `INSERT INTO homepage_hero_banners
+     (id, eyebrow, title, subtitle, image_url, image_alt, primary_cta_label, primary_cta_href,
+      secondary_cta_label, secondary_cta_href, is_active, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 1)
+     ON DUPLICATE KEY UPDATE
+       eyebrow = VALUES(eyebrow), title = VALUES(title), subtitle = VALUES(subtitle),
+       image_url = VALUES(image_url), image_alt = VALUES(image_alt),
+       primary_cta_label = VALUES(primary_cta_label), primary_cta_href = VALUES(primary_cta_href),
+       secondary_cta_label = VALUES(secondary_cta_label), secondary_cta_href = VALUES(secondary_cta_href),
+       is_active = TRUE, display_order = 1`,
+    [
+      current.id,
+      nextHero.eyebrow,
+      nextHero.title,
+      nextHero.subtitle,
+      nextHero.imageUrl,
+      nextHero.imageAlt,
+      nextHero.primaryCta.label,
+      nextHero.primaryCta.href,
+      nextHero.secondaryCta?.label ?? null,
+      nextHero.secondaryCta?.href ?? null,
+    ],
+  );
 
-  return heroBanner;
+  return getActiveHomepageHeroBanner();
 }
 
-export function resetHomepageHeroBanner() {
-  heroBanner = resetJsonFile("homepage-hero-banner.json", fallbackHeroBanner);
+export async function resetHomepageHeroBanner() {
+  await executeSql("DELETE FROM homepage_hero_banners");
+  await updateHomepageHeroBanner(fallbackHeroBanner);
 
-  return heroBanner;
+  return getActiveHomepageHeroBanner();
 }
 
 export function isHomepageHeroBanner(value: unknown): value is HomepageHeroBanner {
@@ -88,6 +133,25 @@ export function isHomepageHeroBanner(value: unknown): value is HomepageHeroBanne
     isCta(candidate.primaryCta) &&
     (candidate.secondaryCta === null || isCta(candidate.secondaryCta))
   );
+}
+
+function mapHeroRow(row: HeroRow): HomepageHeroBanner {
+  return {
+    id: row.id,
+    eyebrow: row.eyebrow,
+    title: row.title,
+    subtitle: row.subtitle,
+    imageUrl: row.image_url,
+    imageAlt: row.image_alt,
+    primaryCta: {
+      label: row.primary_cta_label,
+      href: row.primary_cta_href,
+    },
+    secondaryCta: row.secondary_cta_label && row.secondary_cta_href ? {
+      label: row.secondary_cta_label,
+      href: row.secondary_cta_href,
+    } : null,
+  };
 }
 
 function isCta(value: unknown): value is HomepageHeroBanner["primaryCta"] {

@@ -44,7 +44,7 @@ export async function PUT(request: Request) {
   }
 
   if (parsed.section === "hero") {
-    const updated = updateHomepageHeroBanner(parsed.data as Partial<HomepageHeroBannerInput>);
+    const updated = await updateHomepageHeroBanner(parsed.data as Partial<HomepageHeroBannerInput>);
 
     if (!updated) {
       return Response.json({ error: "Data hero homepage tidak valid." }, { status: 400 });
@@ -54,7 +54,7 @@ export async function PUT(request: Request) {
   }
 
   if (parsed.section === "profileSummary") {
-    const updated = updateHomepageProfileSummary(parsed.data as Partial<HomepageProfileSummaryInput>);
+    const updated = await updateHomepageProfileSummary(parsed.data as Partial<HomepageProfileSummaryInput>);
 
     if (!updated) {
       return Response.json(
@@ -74,18 +74,18 @@ export async function DELETE(request: Request) {
   const resetTarget = searchParams.get("reset");
 
   if (resetTarget === "hero") {
-    return Response.json({ data: resetHomepageHeroBanner() });
+    return Response.json({ data: await resetHomepageHeroBanner() });
   }
 
   if (resetTarget === "profileSummary") {
-    return Response.json({ data: resetHomepageProfileSummary() });
+    return Response.json({ data: await resetHomepageProfileSummary() });
   }
 
   if (resetTarget === "all") {
     return Response.json({
       data: {
-        hero: resetHomepageHeroBanner(),
-        profileSummary: resetHomepageProfileSummary(),
+        hero: await resetHomepageHeroBanner(),
+        profileSummary: await resetHomepageProfileSummary(),
       },
     });
   }

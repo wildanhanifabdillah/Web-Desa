@@ -439,7 +439,6 @@ function NewsAiDraftPanel({ onApply, onError }: { onApply: (draft: NewsAiDraft) 
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        console.error("News draft error", { status: response.status, payload });
         throw new Error(payload?.error ?? `Teks berita gagal dibuat. HTTP ${response.status}`);
       }
 

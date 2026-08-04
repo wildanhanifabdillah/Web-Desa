@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const parsedStatus = status && isAdminContentStatus(status) ? status : undefined;
 
   if (idOrSlug) {
-    const block = getAdminGeneralContentBlock(idOrSlug);
+    const block = await getAdminGeneralContentBlock(idOrSlug);
 
     if (!block) {
       return Response.json({ error: "Konten umum tidak ditemukan." }, { status: 404 });
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     return Response.json({ data: block });
   }
 
-  const blocks = searchAdminGeneralContentBlocks({
+  const blocks = await searchAdminGeneralContentBlocks({
     query: searchParams.get("q") ?? undefined,
     status: parsedStatus,
   });
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Payload konten umum wajib dikirim." }, { status: 400 });
   }
 
-  const result = createAdminGeneralContentBlock(body);
+  const result = await createAdminGeneralContentBlock(body);
 
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: result.status });
@@ -80,7 +80,7 @@ export async function PUT(request: Request) {
     return Response.json({ error: "ID atau slug konten wajib dikirim." }, { status: 400 });
   }
 
-  const result = updateAdminGeneralContentBlock(idOrSlug, body);
+  const result = await updateAdminGeneralContentBlock(idOrSlug, body);
 
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: result.status });
@@ -93,7 +93,7 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
 
   if (searchParams.get("reset") === "true") {
-    const blocks = resetAdminGeneralContentBlocks();
+    const blocks = await resetAdminGeneralContentBlocks();
 
     return Response.json({ data: blocks, meta: { total: blocks.length } });
   }
@@ -104,7 +104,7 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "ID atau slug konten wajib dikirim." }, { status: 400 });
   }
 
-  const deleted = deleteAdminGeneralContentBlock(idOrSlug);
+  const deleted = await deleteAdminGeneralContentBlock(idOrSlug);
 
   if (!deleted) {
     return Response.json({ error: "Konten umum tidak ditemukan." }, { status: 404 });

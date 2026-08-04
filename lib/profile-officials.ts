@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type ProfileOfficialRecord = {
   id: string;
@@ -15,138 +16,111 @@ export type ProfileOfficialRecord = {
 
 export type ProfileOfficialInput = Omit<ProfileOfficialRecord, "id" | "updatedAt">;
 
-const initialOfficialRecords: ProfileOfficialRecord[] = [
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60701",
-    name: "Mugiharto, S.IP",
-    role: "Kepala Desa",
-    focus: "Koordinasi pemerintahan dan arah pembangunan desa",
-    contact: "kades@keseneng.desa.id",
-    area: "Pemerintahan",
-    displayOrder: 1,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60702",
-    name: "Dwi Hermawan, ST",
-    role: "Sekretaris Desa",
-    focus: "Administrasi, arsip, dan layanan informasi publik",
-    contact: "sekdes@keseneng.desa.id",
-    area: "Administrasi",
-    displayOrder: 2,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60703",
-    name: "Nisro, S.Sos",
-    role: "Kepala Urusan Keuangan",
-    focus: "Pengelolaan anggaran, pembukuan, dan laporan keuangan desa",
-    contact: "keuangan@keseneng.desa.id",
-    area: "Keuangan",
-    displayOrder: 3,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60704",
-    name: "Sigit Hidayat",
-    role: "Kepala Urusan Umum dan Perencanaan",
-    focus: "Perencanaan program, aset, dan tata usaha umum desa",
-    contact: "perencanaan@keseneng.desa.id",
-    area: "Perencanaan",
-    displayOrder: 4,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60705",
-    name: "Nurkhotib",
-    role: "Kepala Seksi Pelayanan dan Kesejahteraan",
-    focus: "Pelayanan sosial, pemberdayaan, dan kesejahteraan warga",
-    contact: "pelayanan@keseneng.desa.id",
-    area: "Pelayanan",
-    displayOrder: 5,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60706",
-    name: "Sukarmiyadi",
-    role: "Kepala Seksi Pemerintahan",
-    focus: "Ketertiban administrasi wilayah dan urusan pemerintahan desa",
-    contact: "pemerintahan@keseneng.desa.id",
-    area: "Pemerintahan",
-    displayOrder: 6,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "2e10ba37-95a5-42b0-9795-fb0b63d60707",
-    name: "Surman Al Nurman Yuwono",
-    role: "Kepala Dusun Bugel",
-    focus: "Koordinasi layanan warga dan kegiatan kewilayahan Dusun Bugel",
-    contact: "bugel@keseneng.desa.id",
-    area: "Kewilayahan",
-    displayOrder: 7,
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-];
+type OfficialRow = RowDataPacket & {
+  id: string;
+  name: string;
+  role: string;
+  focus: string;
+  contact: string;
+  area: string;
+  photo_url: string | null;
+  photo_alt: string | null;
+  display_order: number;
+  updated_at: Date | string;
+};
 
-let officialRecords = loadJsonFile("profile-officials.json", initialOfficialRecords);
+type ProfileIdRow = RowDataPacket & { id: string };
 
-export function listOfficialRecords() {
-  return [...officialRecords].sort((left, right) => left.displayOrder - right.displayOrder);
+export async function listOfficialRecords() {
+  const rows = await queryRows<OfficialRow>(
+    `SELECT id, name, role, focus, contact, area, photo_url, photo_alt, display_order, updated_at
+     FROM village_profile_officials
+     WHERE profile_id = (SELECT id FROM village_profiles WHERE is_active = TRUE ORDER BY updated_at DESC LIMIT 1)
+     ORDER BY display_order ASC, name ASC`,
+  );
+
+  return rows.map(mapOfficialRow);
 }
 
-export function getOfficialRecord(id: string) {
-  return officialRecords.find((record) => record.id === id) ?? null;
+export async function getOfficialRecord(id: string) {
+  const rows = await queryRows<OfficialRow>(
+    `SELECT id, name, role, focus, contact, area, photo_url, photo_alt, display_order, updated_at
+     FROM village_profile_officials
+     WHERE id = ?
+     LIMIT 1`,
+    [id],
+  );
+
+  return rows[0] ? mapOfficialRow(rows[0]) : null;
 }
 
-export function createOfficialRecord(input: ProfileOfficialInput) {
-  const record: ProfileOfficialRecord = {
-    ...input,
-    id: crypto.randomUUID(),
-    updatedAt: new Date().toISOString(),
-  };
+export async function createOfficialRecord(input: ProfileOfficialInput) {
+  const profileId = await getActiveProfileId();
+  const recordId = crypto.randomUUID();
 
-  officialRecords = [...officialRecords, record];
-  saveJsonFile("profile-officials.json", officialRecords);
+  await executeSql(
+    `INSERT INTO village_profile_officials
+     (id, profile_id, name, role, focus, contact, area, photo_url, photo_alt, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      recordId,
+      profileId,
+      input.name,
+      input.role,
+      input.focus,
+      input.contact ?? "",
+      input.area ?? "",
+      input.photoUrl ?? null,
+      input.photoAlt ?? null,
+      input.displayOrder,
+    ],
+  );
 
-  return record;
+  return getOfficialRecord(recordId);
 }
 
-export function updateOfficialRecord(id: string, input: Partial<ProfileOfficialInput>) {
-  const existingRecord = getOfficialRecord(id);
+export async function updateOfficialRecord(id: string, input: Partial<ProfileOfficialInput>) {
+  const existingRecord = await getOfficialRecord(id);
 
   if (!existingRecord) {
     return null;
   }
 
-  const updatedRecord: ProfileOfficialRecord = {
-    ...existingRecord,
-    ...input,
-    id: existingRecord.id,
-    updatedAt: new Date().toISOString(),
-  };
+  const updated = { ...existingRecord, ...input };
 
-  officialRecords = officialRecords.map((record) => (record.id === id ? updatedRecord : record));
-  saveJsonFile("profile-officials.json", officialRecords);
+  await executeSql(
+    `UPDATE village_profile_officials
+     SET name = ?, role = ?, focus = ?, contact = ?, area = ?, photo_url = ?, photo_alt = ?, display_order = ?
+     WHERE id = ?`,
+    [
+      updated.name,
+      updated.role,
+      updated.focus,
+      updated.contact ?? "",
+      updated.area ?? "",
+      updated.photoUrl ?? null,
+      updated.photoAlt ?? null,
+      updated.displayOrder,
+      id,
+    ],
+  );
 
-  return updatedRecord;
+  return getOfficialRecord(id);
 }
 
-export function deleteOfficialRecord(id: string) {
-  const existingRecord = getOfficialRecord(id);
+export async function deleteOfficialRecord(id: string) {
+  const existingRecord = await getOfficialRecord(id);
 
   if (!existingRecord) {
     return null;
   }
 
-  officialRecords = officialRecords.filter((record) => record.id !== id);
-  saveJsonFile("profile-officials.json", officialRecords);
+  await executeSql("DELETE FROM village_profile_officials WHERE id = ?", [id]);
 
   return existingRecord;
 }
 
-export function resetOfficialRecords() {
-  officialRecords = resetJsonFile("profile-officials.json", initialOfficialRecords);
-
+export async function resetOfficialRecords() {
   return listOfficialRecords();
 }
 
@@ -173,4 +147,29 @@ export function isOfficialInput(value: unknown): value is ProfileOfficialInput {
   );
 }
 
+async function getActiveProfileId() {
+  const rows = await queryRows<ProfileIdRow>(
+    "SELECT id FROM village_profiles WHERE is_active = TRUE ORDER BY updated_at DESC LIMIT 1",
+  );
 
+  if (!rows[0]) {
+    throw new Error("Profil desa aktif belum tersedia. Jalankan migration dan seeder database.");
+  }
+
+  return rows[0].id;
+}
+
+function mapOfficialRow(row: OfficialRow): ProfileOfficialRecord {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    focus: row.focus,
+    contact: row.contact,
+    area: row.area,
+    photoUrl: row.photo_url ?? undefined,
+    photoAlt: row.photo_alt ?? undefined,
+    displayOrder: Number(row.display_order),
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString(),
+  };
+}

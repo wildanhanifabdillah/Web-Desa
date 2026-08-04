@@ -1,8 +1,8 @@
 import { listArtGroups, listArtTypes } from "@/lib/art-culture-store";
 
 export async function GET() {
-  const types = listArtTypes("active");
-  const groups = listArtGroups("active");
+  const types = await listArtTypes("active");
+  const groups = await listArtGroups("active");
 
   return Response.json({
     data: {

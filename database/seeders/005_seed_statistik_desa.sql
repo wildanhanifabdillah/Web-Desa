@@ -1,25 +1,37 @@
 INSERT INTO data_statistik (
   id,
+  slug,
   category,
   label,
   value_number,
   unit,
   description,
   display_order,
-  is_featured
+  is_featured,
+  status,
+  source_name,
+  period_label
 ) VALUES
-  ('7fb974d5-8f94-4df6-98f0-1038f4fc5f5a', 'Kependudukan', 'Penduduk', 4210, 'jiwa', 'Jumlah penduduk yang tercatat dalam data desa.', 1, TRUE),
-  ('d7c78c32-1e85-4f17-92e2-2a697d8a1b01', 'Kependudukan', 'Kepala Keluarga', 1286, 'KK', 'Jumlah kepala keluarga sebagai basis layanan administrasi.', 2, TRUE),
-  ('2df89b48-25f5-47db-8c0e-84b4c9ce7a01', 'Kewilayahan', 'Dusun', 6, 'dusun', 'Wilayah dusun yang menjadi cakupan pelayanan Desa Keseneng.', 3, TRUE),
-  ('df56c9a1-5f26-4c27-b4f8-5e9cb8b21c11', 'Kewilayahan', 'RT/RW', 34, 'unit', 'Gabungan unit RT dan RW dalam struktur kewilayahan desa.', 4, TRUE)
+  ('7fb974d5-8f94-4df6-98f0-1038f4fc5f5a', 'penduduk', 'Kependudukan', 'Penduduk', 4210, 'jiwa', 'Jumlah penduduk yang tercatat dalam data desa.', 1, TRUE, 'published', 'Data Desa Keseneng', '2026'),
+  ('d7c78c32-1e85-4f17-92e2-2a697d8a1b01', 'kepala-keluarga', 'Kependudukan', 'Kepala Keluarga', 1286, 'KK', 'Jumlah kepala keluarga sebagai basis layanan administrasi.', 2, TRUE, 'published', 'Data Desa Keseneng', '2026'),
+  ('2df89b48-25f5-47db-8c0e-84b4c9ce7a01', 'dusun', 'Kewilayahan', 'Dusun', 6, 'dusun', 'Wilayah dusun yang menjadi cakupan pelayanan Desa Keseneng.', 3, TRUE, 'published', 'Data Desa Keseneng', '2026'),
+  ('df56c9a1-5f26-4c27-b4f8-5e9cb8b21c11', 'rt-rw', 'Kewilayahan', 'RT/RW', 34, 'unit', 'Gabungan unit RT dan RW dalam struktur kewilayahan desa.', 4, TRUE, 'published', 'Data Desa Keseneng', '2026')
 ON DUPLICATE KEY UPDATE
+  slug = VALUES(slug),
   category = VALUES(category),
   label = VALUES(label),
   value_number = VALUES(value_number),
   unit = VALUES(unit),
   description = VALUES(description),
   display_order = VALUES(display_order),
-  is_featured = VALUES(is_featured);
+  is_featured = VALUES(is_featured),
+  status = VALUES(status),
+  source_name = VALUES(source_name),
+  period_label = VALUES(period_label);
+
+UPDATE data_statistik
+SET is_featured = FALSE
+WHERE slug NOT IN ('penduduk', 'kepala-keluarga', 'dusun', 'rt-rw');
 
 INSERT INTO statistic_sections (
   id,

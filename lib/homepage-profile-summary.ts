@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type HomepageProfileSummary = {
   id: string;
@@ -22,6 +23,18 @@ export type HomepageProfileSummary = {
 
 export type HomepageProfileSummaryInput = Omit<HomepageProfileSummary, "id">;
 
+type SummaryRow = RowDataPacket & {
+  id: string;
+  heading: string;
+  body: string;
+  village_name: string;
+  district: string;
+  regency: string;
+  province: string;
+  highlight_label: string;
+  highlight_value: string;
+};
+
 const fallbackProfileSummary: HomepageProfileSummary = {
   id: "70a7abf2-51df-4d6b-9966-0a6d3ec5120b",
   heading: "Desa yang tumbuh dari gotong royong, pangan, dan tradisi.",
@@ -43,35 +56,62 @@ const fallbackProfileSummary: HomepageProfileSummary = {
   },
 };
 
-let profileSummary = loadJsonFile("homepage-profile-summary.json", fallbackProfileSummary);
-
 export async function getHomepageProfileSummary() {
-  return profileSummary;
+  const rows = await queryRows<SummaryRow>(
+    `SELECT id, heading, body, village_name, district, regency, province, highlight_label, highlight_value
+     FROM homepage_profile_summaries
+     WHERE is_active = TRUE
+     ORDER BY display_order ASC
+     LIMIT 1`,
+  );
+
+  return rows[0] ? mapSummaryRow(rows[0]) : fallbackProfileSummary;
 }
 
-export function updateHomepageProfileSummary(input: Partial<HomepageProfileSummaryInput>) {
+export async function updateHomepageProfileSummary(input: Partial<HomepageProfileSummaryInput>) {
+  const current = await getHomepageProfileSummary();
   const nextSummary: HomepageProfileSummary = {
-    ...profileSummary,
+    ...current,
     ...input,
-    location: input.location ?? profileSummary.location,
-    highlight: input.highlight ?? profileSummary.highlight,
-    cta: input.cta ?? profileSummary.cta,
+    location: input.location ?? current.location,
+    highlight: input.highlight ?? current.highlight,
+    cta: input.cta ?? current.cta,
   };
 
   if (!isHomepageProfileSummary(nextSummary)) {
     return null;
   }
 
-  profileSummary = nextSummary;
-  saveJsonFile("homepage-profile-summary.json", profileSummary);
+  await executeSql(
+    `INSERT INTO homepage_profile_summaries
+     (id, heading, body, village_name, district, regency, province, highlight_label, highlight_value, is_active, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 1)
+     ON DUPLICATE KEY UPDATE
+       heading = VALUES(heading), body = VALUES(body), village_name = VALUES(village_name),
+       district = VALUES(district), regency = VALUES(regency), province = VALUES(province),
+       highlight_label = VALUES(highlight_label), highlight_value = VALUES(highlight_value),
+       is_active = TRUE, display_order = 1`,
+    [
+      current.id,
+      nextSummary.heading,
+      nextSummary.body,
+      nextSummary.location.village,
+      nextSummary.location.district,
+      nextSummary.location.regency,
+      nextSummary.location.province,
+      nextSummary.highlight.label,
+      nextSummary.highlight.value,
+    ],
+  );
 
-  return profileSummary;
+  return getHomepageProfileSummary();
 }
 
-export function resetHomepageProfileSummary() {
-  profileSummary = resetJsonFile("homepage-profile-summary.json", fallbackProfileSummary);
+export async function resetHomepageProfileSummary() {
+  await executeSql("DELETE FROM homepage_profile_summaries");
+  await updateHomepageProfileSummary(fallbackProfileSummary);
 
-  return profileSummary;
+  return getHomepageProfileSummary();
 }
 
 export function isHomepageProfileSummary(value: unknown): value is HomepageProfileSummary {
@@ -90,6 +130,25 @@ export function isHomepageProfileSummary(value: unknown): value is HomepageProfi
     isLabelValue(candidate.highlight) &&
     isCta(candidate.cta)
   );
+}
+
+function mapSummaryRow(row: SummaryRow): HomepageProfileSummary {
+  return {
+    id: row.id,
+    heading: row.heading,
+    body: row.body,
+    location: {
+      village: row.village_name,
+      district: row.district,
+      regency: row.regency,
+      province: row.province,
+    },
+    highlight: {
+      label: row.highlight_label,
+      value: row.highlight_value,
+    },
+    cta: fallbackProfileSummary.cta,
+  };
 }
 
 function isLocation(value: unknown): value is HomepageProfileSummary["location"] {

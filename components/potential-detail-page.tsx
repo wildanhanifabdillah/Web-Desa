@@ -77,30 +77,11 @@ export function PotentialDetailPage({
         <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <p className="section-kicker">Detail Potensi</p>
           <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-            Arah pengembangan {category.label.toLowerCase()} Desa Keseneng.
+            Informasi {category.label.toLowerCase()} Desa Keseneng.
           </h2>
           <p className="mt-5 text-base leading-8 text-slate-600">
             {category.detail.description}
           </p>
-
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-slate-950">
-              Peluang pengembangan
-            </h3>
-            <div className="mt-4 grid gap-3">
-              {category.detail.opportunities.map((item, index) => (
-                <div
-                  key={item}
-                  className="grid grid-cols-[2.5rem_1fr] gap-3 rounded-md bg-stone-50 p-4"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-md bg-sage-100 text-sm font-semibold text-sage-800">
-                    {index + 1}
-                  </span>
-                  <p className="text-sm leading-6 text-slate-700">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </article>
 
         <aside className="grid gap-4 self-start">
@@ -129,36 +110,10 @@ export function PotentialDetailPage({
               href={`/potensi#${category.slug}-galeri`}
               className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800"
             >
-              Buka galeri kategori
+              Buka galeri
             </Link>
           </div>
         </aside>
-      </section>
-
-      <section className="bg-white px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-2xl">
-            <p className="section-kicker">Program Turunan</p>
-            <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-              Rencana konten yang bisa dikembangkan admin desa.
-            </h2>
-          </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {category.detail.programs.map((program) => (
-              <article
-                key={program.title}
-                className="rounded-lg border border-slate-200 bg-stone-50 p-5"
-              >
-                <h3 className="text-xl font-semibold text-slate-950">
-                  {program.title}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {program.description}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section className="bg-slate-950 px-4 py-14 text-white sm:px-6 lg:px-8 lg:py-24">

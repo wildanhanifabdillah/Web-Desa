@@ -1,11 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { fetchPublicApi, type ApiResponse } from "@/lib/public-api";
-import type { SiteSettings } from "@/lib/site-settings";
+import { getFallbackSiteSettings, getSiteSettings } from "@/lib/site-settings";
 
 export async function SiteFooter() {
   const currentYear = new Date().getFullYear();
-  const { data: settings } = await fetchPublicApi<ApiResponse<SiteSettings>>("/api/site-settings");
+  const settings = await getSiteSettings().catch(() => getFallbackSiteSettings());
 
   return (
     <footer className="bg-slate-950 text-white">

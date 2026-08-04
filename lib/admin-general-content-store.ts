@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
 
@@ -13,156 +14,133 @@ export type AdminGeneralContentBlock = {
   body: string;
 };
 
-const initialContentBlocks: AdminGeneralContentBlock[] = [
-  {
-    id: "site-identity",
-    slug: "identitas-website",
-    title: "Identitas website",
-    area: "Header dan branding",
-    status: "published",
-    updatedAt: "2026-07-14T00:00:00.000Z",
-    description: "Nama desa, logo inisial, dan label kanal digital desa.",
-    body: "Desa Keseneng Digital menjadi identitas utama kanal informasi desa.",
-  },
-  {
-    id: "homepage-content",
-    slug: "konten-homepage",
-    title: "Konten homepage",
-    area: "Banner dan ringkasan",
-    status: "draft",
-    updatedAt: "2026-07-13T00:00:00.000Z",
-    description: "Judul hero, ajakan utama, statistik ringkas, dan profil singkat.",
-    body: "Konten homepage menggabungkan hero, ringkasan profil, statistik, berita, dan potensi unggulan.",
-  },
-  {
-    id: "contact-info",
-    slug: "informasi-kontak",
-    title: "Informasi kontak",
-    area: "Footer dan administrasi",
-    status: "published",
-    updatedAt: "2026-07-12T00:00:00.000Z",
-    description: "Alamat kantor, email, nomor layanan, dan jam pelayanan.",
-    body: "Informasi kontak membantu warga mengakses layanan administrasi desa.",
-  },
-  {
-    id: "main-navigation",
-    slug: "menu-navigasi",
-    title: "Menu navigasi",
-    area: "Navigasi utama",
-    status: "published",
-    updatedAt: "2026-07-10T00:00:00.000Z",
-    description: "Urutan menu Beranda, Profil, Potensi, Berita, Statistik, dan Dokumen.",
-    body: "Menu navigasi publik disusun untuk akses cepat ke kanal informasi desa.",
-  },
-];
-
-let contentBlocks = loadJsonFile("admin-content-blocks.json", initialContentBlocks);
-
 export type AdminGeneralContentInput = Partial<Omit<AdminGeneralContentBlock, "id" | "updatedAt">> & {
   id?: string;
 };
 
-export function createAdminGeneralContentBlock(input: AdminGeneralContentInput) {
+type ContentRow = RowDataPacket & {
+  id: string;
+  slug: string;
+  title: string;
+  section: string;
+  status: AdminContentStatus;
+  updated_at: Date | string;
+  body: string;
+  metadata: string | { description?: string } | null;
+};
+
+export async function createAdminGeneralContentBlock(input: AdminGeneralContentInput) {
   const validation = validateAdminGeneralContentInput(input);
 
-  if (!validation.ok) {
-    return validation;
-  }
-
-  if (contentBlocks.some((block) => block.slug === validation.input.slug)) {
+  if (!validation.ok) return validation;
+  if (await getAdminGeneralContentBlock(validation.input.slug)) {
     return { ok: false as const, status: 409, error: "Slug konten umum sudah dipakai." };
   }
 
-  const block: AdminGeneralContentBlock = {
-    id: input.id?.trim() || crypto.randomUUID(),
-    ...validation.input,
-    updatedAt: new Date().toISOString(),
-  };
+  const id = input.id?.trim() || crypto.randomUUID();
+  const orderRows = await queryRows<RowDataPacket & { next_order: number }>(
+    "SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM admin_content_blocks",
+  );
 
-  contentBlocks = [block, ...contentBlocks];
-  saveJsonFile("admin-content-blocks.json", contentBlocks);
+  await executeSql(
+    `INSERT INTO admin_content_blocks (id, section, title, slug, body, metadata, status, display_order, published_at)
+     VALUES (?, ?, ?, ?, ?, CAST(? AS JSON), ?, ?, ?)`,
+    [
+      id,
+      validation.input.area,
+      validation.input.title,
+      validation.input.slug,
+      validation.input.body,
+      JSON.stringify({ description: validation.input.description }),
+      validation.input.status,
+      orderRows[0]?.next_order ?? 1,
+      validation.input.status === "published" ? toMysqlDateTime(new Date().toISOString()) : null,
+    ],
+  );
 
-  return { ok: true as const, data: block };
+  return { ok: true as const, data: await getAdminGeneralContentBlock(id) };
 }
 
-export function updateAdminGeneralContentBlock(idOrSlug: string, input: AdminGeneralContentInput) {
-  const index = contentBlocks.findIndex((block) => block.id === idOrSlug || block.slug === idOrSlug);
+export async function updateAdminGeneralContentBlock(idOrSlug: string, input: AdminGeneralContentInput) {
+  const current = await getAdminGeneralContentBlock(idOrSlug);
 
-  if (index < 0) {
+  if (!current) {
     return { ok: false as const, status: 404, error: "Konten umum tidak ditemukan." };
   }
 
-  const current = contentBlocks[index];
   const validation = validateAdminGeneralContentInput({ ...current, ...input });
+  if (!validation.ok) return validation;
 
-  if (!validation.ok) {
-    return validation;
-  }
-
-  const duplicateSlug = contentBlocks.some(
-    (block) => block.slug === validation.input.slug && block.id !== current.id,
-  );
-
-  if (duplicateSlug) {
+  const duplicate = await getAdminGeneralContentBlock(validation.input.slug);
+  if (duplicate && duplicate.id !== current.id) {
     return { ok: false as const, status: 409, error: "Slug konten umum sudah dipakai." };
   }
 
-  const block: AdminGeneralContentBlock = {
-    ...current,
-    ...validation.input,
-    updatedAt: new Date().toISOString(),
-  };
+  await executeSql(
+    `UPDATE admin_content_blocks
+     SET section = ?, title = ?, slug = ?, body = ?, metadata = CAST(? AS JSON), status = ?, published_at = ?
+     WHERE id = ?`,
+    [
+      validation.input.area,
+      validation.input.title,
+      validation.input.slug,
+      validation.input.body,
+      JSON.stringify({ description: validation.input.description }),
+      validation.input.status,
+      validation.input.status === "published" ? toMysqlDateTime(new Date().toISOString()) : null,
+      current.id,
+    ],
+  );
 
-  contentBlocks = contentBlocks.map((item) => item.id === current.id ? block : item);
-  saveJsonFile("admin-content-blocks.json", contentBlocks);
-
-  return { ok: true as const, data: block };
+  return { ok: true as const, data: await getAdminGeneralContentBlock(current.id) };
 }
 
-export function deleteAdminGeneralContentBlock(idOrSlug: string) {
-  const block = getAdminGeneralContentBlock(idOrSlug);
+export async function deleteAdminGeneralContentBlock(idOrSlug: string) {
+  const block = await getAdminGeneralContentBlock(idOrSlug);
 
-  if (!block) {
-    return null;
-  }
-
-  contentBlocks = contentBlocks.filter((item) => item.id !== block.id);
-  saveJsonFile("admin-content-blocks.json", contentBlocks);
+  if (!block) return null;
+  await executeSql("DELETE FROM admin_content_blocks WHERE id = ?", [block.id]);
 
   return block;
 }
 
-export function resetAdminGeneralContentBlocks() {
-  contentBlocks = resetJsonFile("admin-content-blocks.json", initialContentBlocks);
+export async function resetAdminGeneralContentBlocks() {
+  await executeSql("DELETE FROM admin_content_blocks");
 
   return listAdminGeneralContentBlocks();
 }
-export function listAdminGeneralContentBlocks() {
-  return [...contentBlocks];
+
+export async function listAdminGeneralContentBlocks() {
+  const rows = await queryRows<ContentRow>(
+    `SELECT id, slug, title, section, status, updated_at, body, metadata
+     FROM admin_content_blocks
+     ORDER BY display_order ASC, updated_at DESC`,
+  );
+
+  return rows.map(mapContentRow);
 }
 
-export function getAdminGeneralContentBlock(idOrSlug: string) {
-  return contentBlocks.find((block) => block.id === idOrSlug || block.slug === idOrSlug) ?? null;
+export async function getAdminGeneralContentBlock(idOrSlug: string) {
+  const rows = await queryRows<ContentRow>(
+    `SELECT id, slug, title, section, status, updated_at, body, metadata
+     FROM admin_content_blocks
+     WHERE id = ? OR slug = ?
+     LIMIT 1`,
+    [idOrSlug, idOrSlug],
+  );
+
+  return rows[0] ? mapContentRow(rows[0]) : null;
 }
 
-export function searchAdminGeneralContentBlocks({
-  query,
-  status,
-}: {
-  query?: string;
-  status?: AdminContentStatus;
-}) {
+export async function searchAdminGeneralContentBlocks({ query, status }: { query?: string; status?: AdminContentStatus }) {
+  const blocks = await listAdminGeneralContentBlocks();
   const normalizedQuery = query?.trim().toLowerCase();
 
-  return contentBlocks.filter((block) => {
+  return blocks.filter((block) => {
     const matchesQuery = normalizedQuery
-      ? [block.title, block.slug, block.area, block.description, block.body]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery)
+      ? [block.title, block.slug, block.area, block.description, block.body].join(" ").toLowerCase().includes(normalizedQuery)
       : true;
     const matchesStatus = status ? block.status === status : true;
-
     return matchesQuery && matchesStatus;
   });
 }
@@ -170,6 +148,27 @@ export function searchAdminGeneralContentBlocks({
 export function isAdminContentStatus(value: string | null | undefined): value is AdminContentStatus {
   return value === "draft" || value === "published" || value === "archived";
 }
+
+function mapContentRow(row: ContentRow): AdminGeneralContentBlock {
+  const metadata = parseMetadata(row.metadata);
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    area: row.section,
+    status: row.status,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString(),
+    description: metadata.description ?? "",
+    body: row.body,
+  };
+}
+
+function parseMetadata(value: ContentRow["metadata"]) {
+  if (!value) return {} as { description?: string };
+  if (typeof value !== "string") return value;
+  try { return JSON.parse(value) as { description?: string }; } catch { return {}; }
+}
+
 function validateAdminGeneralContentInput(input: AdminGeneralContentInput) {
   const slug = input.slug?.trim();
   const title = input.title?.trim();
@@ -179,26 +178,15 @@ function validateAdminGeneralContentInput(input: AdminGeneralContentInput) {
   const status = input.status ?? "draft";
 
   if (!slug || !title || !area || !description || !body) {
-    return {
-      ok: false as const,
-      status: 400,
-      error: "Slug, judul, area, deskripsi, dan isi konten wajib diisi.",
-    };
+    return { ok: false as const, status: 400, error: "Slug, judul, area, deskripsi, dan isi konten wajib diisi." };
   }
-
   if (!isAdminContentStatus(status)) {
     return { ok: false as const, status: 400, error: "Status konten umum tidak valid." };
   }
 
-  return {
-    ok: true as const,
-    input: {
-      slug,
-      title,
-      area,
-      description,
-      body,
-      status,
-    },
-  };
+  return { ok: true as const, input: { slug, title, area, description, body, status } };
+}
+
+function toMysqlDateTime(value: string) {
+  return new Date(value).toISOString().slice(0, 19).replace("T", " ");
 }

@@ -1,7 +1,7 @@
 import { getSiteSettings, resetSiteSettings, updateSiteSettings, type SiteSettingsInput } from "@/lib/site-settings";
 
 export async function GET() {
-  return Response.json({ data: getSiteSettings() });
+  return Response.json({ data: await getSiteSettings() });
 }
 
 export async function PUT(request: Request) {
@@ -11,7 +11,7 @@ export async function PUT(request: Request) {
     return Response.json({ error: "Payload pengaturan website wajib dikirim." }, { status: 400 });
   }
 
-  const updated = updateSiteSettings(body);
+  const updated = await updateSiteSettings(body);
 
   if (!updated) {
     return Response.json({ error: "Data pengaturan website tidak valid." }, { status: 400 });
@@ -27,5 +27,5 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "Parameter reset=true wajib dikirim." }, { status: 400 });
   }
 
-  return Response.json({ data: resetSiteSettings() });
+  return Response.json({ data: await resetSiteSettings() });
 }

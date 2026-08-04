@@ -55,17 +55,6 @@ export type VillageProfilePillarRow = {
   updated_at: string;
 };
 
-export type VillageProfileTimelineItemRow = {
-  id: string;
-  profile_id: string;
-  period: string;
-  title: string;
-  description: string;
-  display_order: number;
-  created_at: string;
-  updated_at: string;
-};
-
 export type VillageProfileMissionRow = {
   id: string;
   profile_id: string;
@@ -94,7 +83,6 @@ export type VillageProfileRecord = {
   facts: VillageProfileFactRow[];
   highlights: VillageProfileHighlightRow[];
   pillars: VillageProfilePillarRow[];
-  timelineItems: VillageProfileTimelineItemRow[];
   missions: VillageProfileMissionRow[];
   officials: VillageProfileOfficialRow[];
 };
@@ -104,7 +92,6 @@ export const villageProfileTableNames = {
   facts: "village_profile_facts",
   highlights: "village_profile_highlights",
   pillars: "village_profile_pillars",
-  timelineItems: "village_profile_timeline_items",
   missions: "village_profile_missions",
   officials: "village_profile_officials",
 } as const;

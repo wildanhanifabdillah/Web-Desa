@@ -1,6 +1,5 @@
 import { listGeographyRecords } from "@/lib/profile-geography";
 import { listProfileGeneralRecords } from "@/lib/profile-general";
-import { listProfileHistoryRecords } from "@/lib/profile-history";
 import { listOfficialRecords } from "@/lib/profile-officials";
 import { listVisionMissionRecords } from "@/lib/profile-vision-mission";
 export type ProfileFact = {
@@ -11,12 +10,6 @@ export type ProfileFact = {
 export type ProfileHighlight = {
   label: string;
   value: string;
-};
-
-export type ProfileTimelineItem = {
-  period: string;
-  title: string;
-  description: string;
 };
 
 export type ProfileMission = {
@@ -49,12 +42,6 @@ export type ProfileData = {
     highlights: ProfileHighlight[];
     pillars: string[];
   };
-  history: {
-    kicker: string;
-    title: string;
-    description: string;
-    timeline: ProfileTimelineItem[];
-  };
   geography: {
     kicker: string;
     title: string;
@@ -81,7 +68,7 @@ const fallbackProfileData: ProfileData = {
     eyebrow: "Profil Desa",
     title: "Mengenal Desa Keseneng, desa agraris dengan tradisi yang hidup.",
     description:
-      "Halaman profil menyajikan gambaran umum, sejarah, visi misi, geografis, dan perangkat Desa Keseneng sebagai dasar informasi publik untuk warga dan pengunjung.",
+      "Halaman profil menyajikan gambaran umum, kondisi geografis, visi misi, dan perangkat Desa Keseneng sebagai dasar informasi publik untuk warga dan pengunjung.",
     facts: [
       { label: "Kecamatan", value: "Mojotengah" },
       { label: "Kabupaten", value: "Wonosobo" },
@@ -111,38 +98,6 @@ const fallbackProfileData: ProfileData = {
       },
     ],
     pillars: ["Pertanian", "Kesenian", "UMKM", "Gotong Royong"],
-  },
-  history: {
-    kicker: "Sejarah Desa",
-    title: "Linimasa perkembangan Desa Keseneng dari masa ke masa.",
-    description:
-      "Data berikut menampilkan sejarah desa yang dikelola melalui panel admin desa.",
-    timeline: [
-      {
-        period: "Masa awal",
-        title: "Permukiman tumbuh di sekitar lahan produktif",
-        description:
-          "Warga mulai membangun ruang hidup desa dari aktivitas bertani, berbagi sumber air, dan kerja kolektif antar-keluarga.",
-      },
-      {
-        period: "Penguatan dusun",
-        title: "Gotong royong menjadi pola utama pembangunan",
-        description:
-          "Kegiatan jalan lingkungan, saluran air, dan ruang berkumpul warga dikerjakan melalui musyawarah serta swadaya masyarakat.",
-      },
-      {
-        period: "Era pelayanan publik",
-        title: "Administrasi desa semakin tertata",
-        description:
-          "Perangkat desa mulai menata layanan kependudukan, arsip, dan program pembangunan agar lebih mudah dijangkau warga.",
-      },
-      {
-        period: "Hari ini",
-        title: "Keseneng masuk fase publikasi digital",
-        description:
-          "Profil, berita, statistik, potensi, dan dokumen publik disiapkan dalam kanal digital untuk memperluas keterbukaan informasi.",
-      },
-    ],
   },
   geography: {
     kicker: "Kondisi Geografis",
@@ -251,11 +206,10 @@ const fallbackProfileData: ProfileData = {
 };
 
 export async function getProfileData() {
-  const general = listProfileGeneralRecords()[0];
-  const geography = listGeographyRecords()[0];
-  const visionMission = listVisionMissionRecords()[0];
-  const history = listProfileHistoryRecords();
-  const officials = listOfficialRecords();
+  const general = (await listProfileGeneralRecords())[0];
+  const geography = (await listGeographyRecords())[0];
+  const visionMission = (await listVisionMissionRecords())[0];
+  const officials = await listOfficialRecords();
 
   return {
     ...fallbackProfileData,
@@ -280,12 +234,9 @@ export async function getProfileData() {
         { label: "Dominasi lahan", value: general.dominantLandUse },
       ],
     },
-    history: {
-      ...fallbackProfileData.history,
-      timeline: history.map(({ period, title, description }) => ({ period, title, description })),
-    },
     geography: {
       ...fallbackProfileData.geography,
+      kicker: geography.kicker,
       title: geography.title,
       description: geography.description,
       stats: geography.stats,

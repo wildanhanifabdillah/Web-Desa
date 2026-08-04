@@ -32,7 +32,7 @@ export async function saveAdminContentDraftAction(
     return validation;
   }
 
-  const existingBlock = getAdminGeneralContentBlock(input.slug);
+  const existingBlock = await getAdminGeneralContentBlock(input.slug);
   const payload = {
     title: input.title.trim(),
     slug: input.slug.trim(),
@@ -42,8 +42,8 @@ export async function saveAdminContentDraftAction(
     status: "draft" as const,
   };
   const result = existingBlock
-    ? updateAdminGeneralContentBlock(existingBlock.id, payload)
-    : createAdminGeneralContentBlock(payload);
+    ? await updateAdminGeneralContentBlock(existingBlock.id, payload)
+    : await createAdminGeneralContentBlock(payload);
 
   if (!result.ok) {
     return {

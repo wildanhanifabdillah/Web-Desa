@@ -1,4 +1,6 @@
-﻿import { getLatestNews, type LatestNewsItem } from "@/lib/latest-news";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, isDatabaseConfigured, queryRows, type SqlValue } from "@/lib/db";
+import { getLatestNews, type LatestNewsItem } from "@/lib/latest-news";
 import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
 import type { NewsStatus } from "@/lib/news-model";
 
@@ -51,6 +53,24 @@ export type AdminNewsDraftInput = {
   authorName?: string;
 };
 
+type NewsSqlRow = RowDataPacket & {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover_image_url: string;
+  cover_image_alt: string;
+  gallery_images: string | AdminNewsGalleryImage[] | null;
+  category: string;
+  author_name: string;
+  is_ai_generated: 0 | 1 | boolean;
+  status: NewsStatus;
+  published_at: Date | string | null;
+  created_at: Date | string;
+  updated_at: Date | string;
+};
+
 let newsRecords: AdminNewsRecord[] | null = null;
 
 export async function listAdminNews(filters: {
@@ -59,6 +79,10 @@ export async function listAdminNews(filters: {
   status?: NewsStatus;
   limit?: number;
 } = {}) {
+  if (isDatabaseConfigured()) {
+    return listAdminNewsFromSql(filters);
+  }
+
   const records = await ensureNewsRecords();
   const normalizedQuery = filters.query?.trim().toLowerCase();
   const normalizedCategory = filters.category?.trim().toLowerCase();
@@ -91,12 +115,20 @@ export async function listAdminNews(filters: {
 }
 
 export async function getAdminNews(idOrSlug: string) {
+  if (isDatabaseConfigured()) {
+    return getAdminNewsFromSql(idOrSlug);
+  }
+
   const records = await ensureNewsRecords();
 
   return records.find((item) => item.id === idOrSlug || item.slug === idOrSlug) ?? null;
 }
 
 export async function createAdminNews(input: AdminNewsInput) {
+  if (isDatabaseConfigured()) {
+    return createAdminNewsInSql(input);
+  }
+
   const records = await ensureNewsRecords();
   const validation = validateAdminNewsInput(input, { requireContent: true });
 
@@ -131,6 +163,10 @@ export async function createAdminNews(input: AdminNewsInput) {
 }
 
 export async function updateAdminNews(idOrSlug: string, input: AdminNewsInput) {
+  if (isDatabaseConfigured()) {
+    return updateAdminNewsInSql(idOrSlug, input);
+  }
+
   const records = await ensureNewsRecords();
   const index = records.findIndex((item) => item.id === idOrSlug || item.slug === idOrSlug);
 
@@ -184,6 +220,10 @@ export async function updateAdminNews(idOrSlug: string, input: AdminNewsInput) {
 }
 
 export async function deleteAdminNews(idOrSlug: string) {
+  if (isDatabaseConfigured()) {
+    return deleteAdminNewsFromSql(idOrSlug);
+  }
+
   const records = await ensureNewsRecords();
   const index = records.findIndex((item) => item.id === idOrSlug || item.slug === idOrSlug);
 
@@ -198,6 +238,17 @@ export async function deleteAdminNews(idOrSlug: string) {
 }
 
 export async function resetAdminNews() {
+  if (isDatabaseConfigured()) {
+    const records = await getInitialNewsRecords();
+    await executeSql("DELETE FROM berita");
+
+    for (const record of records) {
+      await insertAdminNewsSql(record);
+    }
+
+    return records;
+  }
+
   newsRecords = resetJsonFile("admin-news.json", await getInitialNewsRecords());
 
   return newsRecords ?? [];
@@ -256,6 +307,270 @@ async function ensureNewsRecords() {
   }
 
   return newsRecords ?? [];
+}
+
+
+async function listAdminNewsFromSql(filters: {
+  query?: string;
+  category?: string;
+  status?: NewsStatus;
+  limit?: number;
+} = {}) {
+  const where: string[] = [];
+  const values: SqlValue[] = [];
+  const normalizedQuery = filters.query?.trim();
+  const normalizedCategory = filters.category?.trim();
+
+  if (normalizedQuery) {
+    where.push("(title LIKE ? OR slug LIKE ? OR excerpt LIKE ? OR content LIKE ? OR category LIKE ? OR author_name LIKE ?)");
+    const likeValue = `%${normalizedQuery}%`;
+    values.push(likeValue, likeValue, likeValue, likeValue, likeValue, likeValue);
+  }
+
+  if (normalizedCategory) {
+    where.push("LOWER(category) = LOWER(?)");
+    values.push(normalizedCategory);
+  }
+
+  if (filters.status) {
+    where.push("status = ?");
+    values.push(filters.status);
+  }
+
+  const limitSql = typeof filters.limit === "number" ? " LIMIT ?" : "";
+
+  if (typeof filters.limit === "number") {
+    values.push(filters.limit);
+  }
+
+  const rows = await queryRows<NewsSqlRow>(
+    `SELECT * FROM berita${where.length > 0 ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY COALESCE(published_at, updated_at) DESC, updated_at DESC${limitSql}`,
+    values,
+  );
+
+  return rows.map(mapNewsSqlRow);
+}
+
+async function getAdminNewsFromSql(idOrSlug: string) {
+  const rows = await queryRows<NewsSqlRow>("SELECT * FROM berita WHERE id = ? OR slug = ? LIMIT 1", [idOrSlug, idOrSlug]);
+
+  return rows[0] ? mapNewsSqlRow(rows[0]) : null;
+}
+
+async function createAdminNewsInSql(input: AdminNewsInput) {
+  const validation = validateAdminNewsInput(input, { requireContent: true });
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  const existing = await getAdminNewsFromSql(validation.input.slug);
+
+  if (existing) {
+    return { ok: false as const, status: 409, error: "Slug berita sudah dipakai." };
+  }
+
+  const now = new Date().toISOString();
+  const record: AdminNewsRecord = {
+    id: crypto.randomUUID(),
+    ...validation.input,
+    publishedAt: validation.input.publishedAt ?? (validation.input.status === "published" ? now : null),
+    galleryImages: validation.input.galleryImages ?? [],
+    isAiGenerated: validation.input.isAiGenerated ?? false,
+    status: validation.input.status ?? "draft",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await insertAdminNewsSql(record);
+
+  return { ok: true as const, data: record };
+}
+
+async function updateAdminNewsInSql(idOrSlug: string, input: AdminNewsInput) {
+  const current = await getAdminNewsFromSql(idOrSlug);
+
+  if (!current) {
+    return { ok: false as const, status: 404, error: "Berita tidak ditemukan." };
+  }
+
+  const merged: AdminNewsInput = {
+    ...current,
+    ...input,
+    galleryImages: input.galleryImages
+      ? [...(current.galleryImages ?? []), ...input.galleryImages]
+      : current.galleryImages ?? [],
+  };
+  const validation = validateAdminNewsInput(merged, { requireContent: true });
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  const duplicate = await queryRows<NewsSqlRow>(
+    "SELECT id FROM berita WHERE slug = ? AND id <> ? LIMIT 1",
+    [validation.input.slug, current.id],
+  );
+
+  if (duplicate.length > 0) {
+    return { ok: false as const, status: 409, error: "Slug berita sudah dipakai." };
+  }
+
+  const updated: AdminNewsRecord = {
+    ...current,
+    ...validation.input,
+    publishedAt: validation.input.publishedAt ?? current.publishedAt,
+    isAiGenerated: validation.input.isAiGenerated ?? current.isAiGenerated,
+    status: validation.input.status ?? current.status,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await executeSql(
+    `UPDATE berita SET
+      title = ?,
+      slug = ?,
+      excerpt = ?,
+      content = ?,
+      cover_image_url = ?,
+      cover_image_alt = ?,
+      gallery_images = CAST(? AS JSON),
+      category = ?,
+      author_name = ?,
+      is_ai_generated = ?,
+      status = ?,
+      published_at = ?,
+      updated_at = ?
+    WHERE id = ?`,
+    [
+      updated.title,
+      updated.slug,
+      updated.excerpt,
+      updated.content,
+      updated.imageUrl,
+      updated.imageAlt,
+      JSON.stringify(updated.galleryImages ?? []),
+      updated.category,
+      updated.authorName,
+      updated.isAiGenerated ? 1 : 0,
+      updated.status,
+      toMysqlDateTime(updated.publishedAt),
+      toMysqlDateTime(updated.updatedAt),
+      updated.id,
+    ],
+  );
+
+  return { ok: true as const, data: updated };
+}
+
+async function deleteAdminNewsFromSql(idOrSlug: string) {
+  const current = await getAdminNewsFromSql(idOrSlug);
+
+  if (!current) {
+    return null;
+  }
+
+  await executeSql("DELETE FROM berita WHERE id = ?", [current.id]);
+
+  return current;
+}
+
+async function insertAdminNewsSql(record: AdminNewsRecord) {
+  await executeSql(
+    `INSERT INTO berita (
+      id,
+      title,
+      slug,
+      excerpt,
+      content,
+      cover_image_url,
+      cover_image_alt,
+      gallery_images,
+      category,
+      author_name,
+      is_ai_generated,
+      status,
+      published_at,
+      created_at,
+      updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      record.id,
+      record.title,
+      record.slug,
+      record.excerpt,
+      record.content,
+      record.imageUrl,
+      record.imageAlt,
+      JSON.stringify(record.galleryImages ?? []),
+      record.category,
+      record.authorName,
+      record.isAiGenerated ? 1 : 0,
+      record.status,
+      toMysqlDateTime(record.publishedAt),
+      toMysqlDateTime(record.createdAt),
+      toMysqlDateTime(record.updatedAt),
+    ],
+  );
+}
+
+function mapNewsSqlRow(row: NewsSqlRow): AdminNewsRecord {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    excerpt: row.excerpt,
+    content: row.content,
+    category: row.category,
+    imageUrl: row.cover_image_url,
+    imageAlt: row.cover_image_alt,
+    galleryImages: parseGalleryImages(row.gallery_images),
+    publishedAt: normalizeSqlDate(row.published_at),
+    authorName: row.author_name,
+    isAiGenerated: Boolean(row.is_ai_generated),
+    status: row.status,
+    createdAt: normalizeSqlDate(row.created_at) ?? new Date().toISOString(),
+    updatedAt: normalizeSqlDate(row.updated_at) ?? new Date().toISOString(),
+  };
+}
+
+function parseGalleryImages(value: NewsSqlRow["gallery_images"]): AdminNewsGalleryImage[] {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return normalizeGalleryImages(value);
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+
+    return Array.isArray(parsed) ? normalizeGalleryImages(parsed as AdminNewsGalleryImage[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeSqlDate(value: Date | string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+function toMysqlDateTime(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
 async function getInitialNewsRecords() {

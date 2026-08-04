@@ -23,10 +23,10 @@ export function PotentialPage({ categories }: PotentialPageProps) {
               Potensi Desa
             </p>
             <h1 className="mt-8 text-3xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-              Kategori potensi Desa Keseneng yang siap dikembangkan.
+              Kategori potensi Desa Keseneng yang siap diisi dan dikelola.
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-100 sm:text-lg">
-              Jelajahi potensi unggulan desa mulai dari wisata alam, agro tourism, UMKM, sampai seni budaya dalam susunan yang mudah dipindai.
+              Jelajahi potensi unggulan desa dalam susunan katalog yang mudah diisi, diperbarui, dan dipindai pengunjung.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/20 bg-white/10 p-3 backdrop-blur-md sm:p-4">
@@ -116,23 +116,6 @@ export function PotentialPage({ categories }: PotentialPageProps) {
       </section>
 
       <PotentialGallerySection categories={categories} />
-
-      <section className="bg-white px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
-          <div>
-            <p className="section-kicker">Pengembangan Potensi</p>
-            <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-              Setiap kategori disiapkan sebagai pintu masuk ke detail potensi
-              desa berikutnya.
-            </h2>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <SummaryCard value="Katalog" label="Produk dan layanan warga" />
-            <SummaryCard value="Cerita" label="Narasi kegiatan lokal" />
-            <SummaryCard value="Kontak" label="Arah pengelolaan admin" />
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
@@ -214,22 +197,4 @@ function HeroMetric({ value, label }: { value: string; label: string }) {
     </div>
   );
 }
-
-function SummaryCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-stone-50 p-5">
-      <strong className="block text-lg font-semibold text-slate-950">
-        {value}
-      </strong>
-      <span className="mt-2 block text-sm leading-6 text-slate-600">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-
-
-
-
 

@@ -63,7 +63,6 @@ export function DisasterDashboardPage() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("menghubungkan");
   const [status, setStatus] = useState<DisasterStatus>("unknown");
   const [lastUpdate, setLastUpdate] = useState<string>("-");
-  const [lastTopic, setLastTopic] = useState<string>("-");
   const [series, setSeries] = useState<Record<SensorKey, SensorPoint[]>>({
     wind: [],
     temperature: [],
@@ -88,7 +87,6 @@ export function DisasterDashboardPage() {
 
       applyStoredSnapshot(payload.data, {
         setStatus,
-        setLastTopic,
         setLastUpdate,
         setSeries,
         setConnectionState,
@@ -145,7 +143,6 @@ export function DisasterDashboardPage() {
             <strong className="mt-3 block text-4xl font-semibold">{statusLabels[status]}</strong>
             <p className="mt-4 text-sm font-medium">Koneksi: {formatConnectionState(connectionState)}</p>
             <p className="mt-1 text-sm font-medium">Update terakhir: {lastUpdate}</p>
-            <p className="mt-1 break-all text-sm font-medium">Data terakhir: {lastTopic}</p>
           </div>
         </div>
       </section>
@@ -266,7 +263,6 @@ function RealtimeChart({
         </svg>
       </div>
       <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-        <span>40 data terakhir</span>
         <span>{points.at(-1)?.time ?? "-"}</span>
       </div>
     </article>
@@ -277,14 +273,12 @@ function applyStoredSnapshot(
   snapshot: DisasterSensorSnapshot,
   setters: {
     setStatus: Dispatch<SetStateAction<DisasterStatus>>;
-    setLastTopic: Dispatch<SetStateAction<string>>;
     setLastUpdate: Dispatch<SetStateAction<string>>;
     setSeries: Dispatch<SetStateAction<Record<SensorKey, SensorPoint[]>>>;
     setConnectionState: Dispatch<SetStateAction<ConnectionState>>;
   },
 ) {
   setters.setStatus(snapshot.status);
-  setters.setLastTopic(snapshot.lastTopic);
   setters.setLastUpdate(formatStoredTime(snapshot.lastUpdate));
 
   if (snapshot.connection === "online") {

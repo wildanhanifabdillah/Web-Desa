@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const query = searchParams.get("q")?.trim().toLowerCase();
 
   if (id) {
-    const record = getOfficialRecord(id);
+    const record = await getOfficialRecord(id);
 
     if (!record) {
       return Response.json({ error: "Perangkat desa tidak ditemukan." }, { status: 404 });
@@ -29,7 +29,8 @@ export async function GET(request: Request) {
     return Response.json({ data: record });
   }
 
-  const records = listOfficialRecords().filter((record) => {
+  const allRecords = await listOfficialRecords();
+  const records = allRecords.filter((record) => {
     const matchesArea = area ? (record.area ?? "").toLowerCase() === area : true;
     const matchesQuery = query
       ? [record.name, record.role, record.focus, record.contact, record.area]
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
     data: records,
     meta: {
       total: records.length,
-      areas: Array.from(new Set(listOfficialRecords().map((record) => record.area).filter(Boolean))),
+      areas: Array.from(new Set(allRecords.map((record) => record.area).filter(Boolean))),
       area: area ?? null,
       query: query ?? null,
     },
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const record = createOfficialRecord(parsed.input);
+  const record = await createOfficialRecord(parsed.input);
 
   return Response.json({ data: record, meta: parsed.upload }, { status: 201 });
 }
@@ -82,7 +83,7 @@ export async function PUT(request: Request) {
     return Response.json({ error: "ID perangkat desa wajib dikirim." }, { status: 400 });
   }
 
-  const record = updateOfficialRecord(parsed.id, parsed.input);
+  const record = await updateOfficialRecord(parsed.id, parsed.input);
 
   if (!record) {
     return Response.json({ error: "Perangkat desa tidak ditemukan." }, { status: 404 });
@@ -95,7 +96,7 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
 
   if (searchParams.get("reset") === "true") {
-    const records = resetOfficialRecords();
+    const records = await resetOfficialRecords();
 
     return Response.json({ data: records, meta: { total: records.length } });
   }
@@ -106,7 +107,7 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "ID perangkat desa wajib dikirim." }, { status: 400 });
   }
 
-  const record = deleteOfficialRecord(id);
+  const record = await deleteOfficialRecord(id);
 
   if (!record) {
     return Response.json({ error: "Perangkat desa tidak ditemukan." }, { status: 404 });

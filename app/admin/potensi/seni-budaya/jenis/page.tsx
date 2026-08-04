@@ -3,8 +3,8 @@ import { listArtTypes } from "@/lib/art-culture-store";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminJenisKesenianPage() {
-  const types = listArtTypes();
+export default async function AdminJenisKesenianPage() {
+  const types = await listArtTypes();
 
   return (
     <AdminCrudPage

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const id = searchParams.get("id");
 
   if (id) {
-    const record = getProfileGeneralRecord(id);
+    const record = await getProfileGeneralRecord(id);
 
     if (!record) {
       return Response.json({ error: "Profil umum desa tidak ditemukan." }, { status: 404 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     return Response.json({ data: record });
   }
 
-  return Response.json({ data: listProfileGeneralRecords() });
+  return Response.json({ data: await listProfileGeneralRecords() });
 }
 
 export async function POST(request: Request) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const record = createProfileGeneralRecord(body);
+  const record = await createProfileGeneralRecord(body);
 
   return Response.json({ data: record }, { status: 201 });
 }
@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
   }
 
   const { id, ...input } = body as { id: string } & Record<string, unknown>;
-  const record = updateProfileGeneralRecord(id, input);
+  const record = await updateProfileGeneralRecord(id, input);
 
   if (!record) {
     return Response.json({ error: "Profil umum desa tidak ditemukan." }, { status: 404 });
@@ -63,14 +63,14 @@ export async function DELETE(request: Request) {
   const reset = searchParams.get("reset") === "true";
 
   if (reset) {
-    return Response.json({ data: resetProfileGeneralRecords() });
+    return Response.json({ data: await resetProfileGeneralRecords() });
   }
 
   if (!id) {
     return Response.json({ error: "ID profil umum desa wajib dikirim." }, { status: 400 });
   }
 
-  const record = deleteProfileGeneralRecord(id);
+  const record = await deleteProfileGeneralRecord(id);
 
   if (!record) {
     return Response.json({ error: "Profil umum desa tidak ditemukan." }, { status: 404 });

@@ -1,12 +1,11 @@
 ﻿import Link from "next/link";
-import type { GalleryAlbum, GalleryVideo } from "@/lib/gallery";
+import type { GalleryAlbum } from "@/lib/gallery";
 
 type GalleryPageProps = {
   albums: GalleryAlbum[];
-  videos: GalleryVideo[];
 };
 
-export function GalleryPage({ albums, videos }: GalleryPageProps) {
+export function GalleryPage({ albums }: GalleryPageProps) {
   const totalPhotos = albums.reduce((total, album) => total + album.photoCount, 0);
 
   return (
@@ -20,17 +19,16 @@ export function GalleryPage({ albums, videos }: GalleryPageProps) {
               Galeri Desa
             </p>
             <h1 className="mt-8 text-3xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-              Album foto dan video kegiatan Desa Keseneng.
+              Album foto kegiatan Desa Keseneng.
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-100 sm:text-lg">
               Dokumentasi visual kegiatan warga, potensi desa, pelayanan publik,
               dan agenda budaya disusun agar mudah dipindai oleh pengunjung.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/20 bg-white/10 p-3 backdrop-blur-md sm:p-4">
+          <div className="grid grid-cols-3 gap-3 rounded-lg border border-white/20 bg-white/10 p-3 backdrop-blur-md sm:p-4">
             <HeroMetric value={albums.length.toString()} label="album" />
             <HeroMetric value={totalPhotos.toString()} label="foto" />
-            <HeroMetric value={videos.length.toString()} label="video" />
             <HeroMetric value="2026" label="periode" />
           </div>
         </div>
@@ -83,46 +81,6 @@ export function GalleryPage({ albums, videos }: GalleryPageProps) {
           ))}
         </div>
       </section>
-
-      <section className="bg-white px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-2xl">
-            <p className="section-kicker">Video Desa</p>
-            <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-              Cuplikan video untuk mengenalkan kegiatan dan cerita warga.
-            </h2>
-          </div>
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {videos.map((video) => (
-              <article
-                key={video.id}
-                className="overflow-hidden rounded-lg border border-slate-200 bg-stone-50 shadow-sm"
-              >
-                <div
-                  className="relative h-52 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${video.thumbnail})` }}
-                  aria-hidden="true"
-                >
-                  <span className="absolute bottom-3 right-3 rounded-md bg-slate-950/90 px-2.5 py-1 text-xs font-semibold text-white">
-                    {video.duration}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold leading-7 text-slate-950">
-                    {video.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {video.description}
-                  </p>
-                  <time className="mt-5 block text-xs font-semibold text-slate-500">
-                    {formatDate(video.publishedAt)}
-                  </time>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
@@ -143,5 +101,3 @@ function formatDate(value: string) {
     year: "numeric",
   }).format(new Date(value));
 }
-
-

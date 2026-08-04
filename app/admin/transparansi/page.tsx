@@ -19,7 +19,7 @@ export default async function AdminTransparansiPage() {
         { name: "slug", label: "Slug", type: "hidden" },
         { name: "category", label: "Kategori", required: true },
         { name: "year", label: "Tahun", type: "number", defaultValue: "2026", required: true },
-        { name: "description", label: "Deskripsi", type: "textarea", required: true },
+        { name: "description", label: "Deskripsi", type: "textarea" },
         { name: "fileUrl", label: "Path PDF", type: "hidden" },
         { name: "fileType", label: "Jenis file", type: "hidden", defaultValue: "PDF" },
         { name: "fileSize", label: "Ukuran file", type: "hidden", defaultValue: "1 MB" },

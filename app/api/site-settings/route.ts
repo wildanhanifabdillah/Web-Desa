@@ -1,5 +1,7 @@
-import { getSiteSettings } from "@/lib/site-settings";
+import { getFallbackSiteSettings, getSiteSettings } from "@/lib/site-settings";
 
 export async function GET() {
-  return Response.json({ data: getSiteSettings() });
+  const settings = await getSiteSettings().catch(() => getFallbackSiteSettings());
+
+  return Response.json({ data: settings });
 }

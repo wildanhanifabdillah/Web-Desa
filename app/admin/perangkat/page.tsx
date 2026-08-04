@@ -2,7 +2,9 @@ import { AdminCrudPage } from "@/components/admin-crud-page";
 import { listOfficialRecords } from "@/lib/profile-officials";
 
 export const dynamic = "force-dynamic";
-export default function AdminPerangkatPage() {
+export default async function AdminPerangkatPage() {
+  const officials = await listOfficialRecords();
+
   return (
     <AdminCrudPage
       eyebrow="Admin Perangkat Desa"
@@ -11,7 +13,7 @@ export default function AdminPerangkatPage() {
       endpoint="/api/admin/officials"
       activeHref="/admin/perangkat"
       publicHref="/profil"
-      initialRows={listOfficialRecords() as unknown as Array<Record<string, unknown>>}
+      initialRows={officials as unknown as Array<Record<string, unknown>>}
       fields={[
         { name: "name", label: "Nama", required: true },
         { name: "role", label: "Jabatan", required: true },

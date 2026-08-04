@@ -1,4 +1,5 @@
-import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
+﻿import type { RowDataPacket } from "mysql2";
+import { executeSql, queryRows } from "@/lib/db";
 
 export type ArtCultureStatus = "active" | "draft" | "archived";
 
@@ -37,6 +38,11 @@ export type ArtGroupRecord = {
 
 export type ArtTypeInput = Omit<ArtTypeRecord, "id" | "updatedAt">;
 export type ArtGroupInput = Omit<ArtGroupRecord, "id" | "updatedAt">;
+
+type SettingsRow = RowDataPacket & { setting_value: string | unknown };
+
+const typesKey = "art_culture_types";
+const groupsKey = "art_culture_groups";
 
 const initialArtTypes: ArtTypeRecord[] = [
   {
@@ -150,69 +156,43 @@ const initialArtGroups: ArtGroupRecord[] = [
   },
 ];
 
-let artTypes: ArtTypeRecord[] | null = null;
-let artGroups: ArtGroupRecord[] | null = null;
-
-function ensureArtTypes() {
-  if (!artTypes) {
-    artTypes = loadJsonFile("art-culture-types.json", initialArtTypes);
-  }
-
-  return artTypes ?? [];
-}
-
-function ensureArtGroups() {
-  if (!artGroups) {
-    artGroups = loadJsonFile("art-culture-groups.json", initialArtGroups);
-  }
-
-  return artGroups ?? [];
-}
-
-export function listArtTypes(status?: ArtCultureStatus) {
-  return ensureArtTypes()
+export async function listArtTypes(status?: ArtCultureStatus) {
+  return (await loadRecords<ArtTypeRecord>(typesKey, initialArtTypes))
     .filter((item) => status ? item.status === status : true)
     .sort((left, right) => left.displayOrder - right.displayOrder);
 }
 
-export function listArtGroups(status?: ArtCultureStatus) {
-  return ensureArtGroups()
+export async function listArtGroups(status?: ArtCultureStatus) {
+  return (await loadRecords<ArtGroupRecord>(groupsKey, initialArtGroups))
     .filter((item) => status ? item.status === status : true)
     .sort((left, right) => left.displayOrder - right.displayOrder);
 }
 
-export function getArtType(idOrSlug: string) {
-  return ensureArtTypes().find((item) => item.id === idOrSlug || item.slug === idOrSlug) ?? null;
+export async function getArtType(idOrSlug: string) {
+  return (await loadRecords<ArtTypeRecord>(typesKey, initialArtTypes)).find((item) => item.id === idOrSlug || item.slug === idOrSlug) ?? null;
 }
 
-export function getArtGroup(idOrSlug: string) {
-  return ensureArtGroups().find((item) => item.id === idOrSlug || item.slug === idOrSlug) ?? null;
+export async function getArtGroup(idOrSlug: string) {
+  return (await loadRecords<ArtGroupRecord>(groupsKey, initialArtGroups)).find((item) => item.id === idOrSlug || item.slug === idOrSlug) ?? null;
 }
 
-export function createArtType(input: ArtTypeInput) {
-  const records = ensureArtTypes();
+export async function createArtType(input: ArtTypeInput) {
+  const records = await loadRecords<ArtTypeRecord>(typesKey, initialArtTypes);
   const slug = normalizeSlug(input.slug || input.name);
 
   if (records.some((item) => item.slug === slug || item.id === slug)) {
     return null;
   }
 
-  const record: ArtTypeRecord = {
-    ...input,
-    id: slug,
-    slug,
-    updatedAt: new Date().toISOString(),
-  };
-
-  artTypes = [...records, record];
-  saveJsonFile("art-culture-types.json", artTypes);
+  const record: ArtTypeRecord = { ...input, id: slug, slug, updatedAt: new Date().toISOString() };
+  await saveRecords(typesKey, [...records, record]);
 
   return record;
 }
 
-export function updateArtType(idOrSlug: string, input: Partial<ArtTypeInput>) {
-  const records = ensureArtTypes();
-  const existing = getArtType(idOrSlug);
+export async function updateArtType(idOrSlug: string, input: Partial<ArtTypeInput>) {
+  const records = await loadRecords<ArtTypeRecord>(typesKey, initialArtTypes);
+  const existing = records.find((item) => item.id === idOrSlug || item.slug === idOrSlug);
 
   if (!existing) {
     return null;
@@ -225,42 +205,32 @@ export function updateArtType(idOrSlug: string, input: Partial<ArtTypeInput>) {
     slug: input.slug ? normalizeSlug(input.slug) : existing.slug,
     updatedAt: new Date().toISOString(),
   };
-
-  artTypes = records.map((item) => item.id === existing.id ? record : item);
-  saveJsonFile("art-culture-types.json", artTypes);
+  await saveRecords(typesKey, records.map((item) => item.id === existing.id ? record : item));
 
   return record;
 }
 
-export function deleteArtType(idOrSlug: string) {
+export async function deleteArtType(idOrSlug: string) {
   return updateArtType(idOrSlug, { status: "archived" });
 }
 
-export function createArtGroup(input: ArtGroupInput) {
-  const records = ensureArtGroups();
+export async function createArtGroup(input: ArtGroupInput) {
+  const records = await loadRecords<ArtGroupRecord>(groupsKey, initialArtGroups);
   const slug = normalizeSlug(input.slug || input.name);
 
   if (records.some((item) => item.slug === slug || item.id === slug)) {
     return null;
   }
 
-  const record: ArtGroupRecord = {
-    ...input,
-    id: slug,
-    slug,
-    artTypeIds: normalizeArtTypeIds(input.artTypeIds),
-    updatedAt: new Date().toISOString(),
-  };
-
-  artGroups = [...records, record];
-  saveJsonFile("art-culture-groups.json", artGroups);
+  const record: ArtGroupRecord = { ...input, id: slug, slug, artTypeIds: normalizeArtTypeIds(input.artTypeIds), updatedAt: new Date().toISOString() };
+  await saveRecords(groupsKey, [...records, record]);
 
   return record;
 }
 
-export function updateArtGroup(idOrSlug: string, input: Partial<ArtGroupInput>) {
-  const records = ensureArtGroups();
-  const existing = getArtGroup(idOrSlug);
+export async function updateArtGroup(idOrSlug: string, input: Partial<ArtGroupInput>) {
+  const records = await loadRecords<ArtGroupRecord>(groupsKey, initialArtGroups);
+  const existing = records.find((item) => item.id === idOrSlug || item.slug === idOrSlug);
 
   if (!existing) {
     return null;
@@ -274,71 +244,62 @@ export function updateArtGroup(idOrSlug: string, input: Partial<ArtGroupInput>) 
     artTypeIds: input.artTypeIds ? normalizeArtTypeIds(input.artTypeIds) : existing.artTypeIds,
     updatedAt: new Date().toISOString(),
   };
-
-  artGroups = records.map((item) => item.id === existing.id ? record : item);
-  saveJsonFile("art-culture-groups.json", artGroups);
+  await saveRecords(groupsKey, records.map((item) => item.id === existing.id ? record : item));
 
   return record;
 }
 
-export function deleteArtGroup(idOrSlug: string) {
+export async function deleteArtGroup(idOrSlug: string) {
   return updateArtGroup(idOrSlug, { status: "archived" });
 }
 
-export function resetArtCultureRecords() {
-  artTypes = resetJsonFile("art-culture-types.json", initialArtTypes);
-  artGroups = resetJsonFile("art-culture-groups.json", initialArtGroups);
+export async function resetArtCultureRecords() {
+  await saveRecords(typesKey, initialArtTypes);
+  await saveRecords(groupsKey, initialArtGroups);
 
-  return { types: artTypes, groups: artGroups };
+  return { types: initialArtTypes, groups: initialArtGroups };
 }
 
 export function isArtTypeInput(value: unknown): value is ArtTypeInput {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
+  if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<ArtTypeInput>;
-
-  return (
-    typeof candidate.slug === "string" &&
-    typeof candidate.name === "string" && candidate.name.trim().length > 0 &&
-    typeof candidate.summary === "string" && candidate.summary.trim().length > 0 &&
-    typeof candidate.description === "string" && candidate.description.trim().length > 0 &&
-    typeof candidate.history === "string" &&
-    typeof candidate.imageUrl === "string" &&
-    typeof candidate.imageAlt === "string" &&
-    typeof candidate.displayOrder === "number" && Number.isFinite(candidate.displayOrder) &&
-    isArtCultureStatus(candidate.status)
-  );
+  return typeof candidate.slug === "string" && typeof candidate.name === "string" && candidate.name.trim().length > 0 && typeof candidate.summary === "string" && candidate.summary.trim().length > 0 && typeof candidate.description === "string" && candidate.description.trim().length > 0 && typeof candidate.history === "string" && typeof candidate.imageUrl === "string" && typeof candidate.imageAlt === "string" && typeof candidate.displayOrder === "number" && Number.isFinite(candidate.displayOrder) && isArtCultureStatus(candidate.status);
 }
 
 export function isArtGroupInput(value: unknown): value is ArtGroupInput {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
+  if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<ArtGroupInput>;
-
-  return (
-    typeof candidate.slug === "string" &&
-    typeof candidate.name === "string" && candidate.name.trim().length > 0 &&
-    Array.isArray(candidate.artTypeIds) &&
-    typeof candidate.foundedHistory === "string" &&
-    typeof candidate.performanceManagement === "string" &&
-    typeof candidate.memberCount === "number" && Number.isFinite(candidate.memberCount) &&
-    typeof candidate.tariffMin === "number" && Number.isFinite(candidate.tariffMin) &&
-    typeof candidate.tariffMax === "number" && Number.isFinite(candidate.tariffMax) &&
-    typeof candidate.contactName === "string" &&
-    typeof candidate.contactPhone === "string" &&
-    typeof candidate.imageUrl === "string" &&
-    typeof candidate.imageAlt === "string" &&
-    typeof candidate.displayOrder === "number" && Number.isFinite(candidate.displayOrder) &&
-    isArtCultureStatus(candidate.status)
-  );
+  return typeof candidate.slug === "string" && typeof candidate.name === "string" && candidate.name.trim().length > 0 && Array.isArray(candidate.artTypeIds) && typeof candidate.foundedHistory === "string" && typeof candidate.performanceManagement === "string" && typeof candidate.memberCount === "number" && Number.isFinite(candidate.memberCount) && typeof candidate.tariffMin === "number" && Number.isFinite(candidate.tariffMin) && typeof candidate.tariffMax === "number" && Number.isFinite(candidate.tariffMax) && typeof candidate.contactName === "string" && typeof candidate.contactPhone === "string" && typeof candidate.imageUrl === "string" && typeof candidate.imageAlt === "string" && typeof candidate.displayOrder === "number" && Number.isFinite(candidate.displayOrder) && isArtCultureStatus(candidate.status);
 }
 
 export function isArtCultureStatus(value: unknown): value is ArtCultureStatus {
   return value === "active" || value === "draft" || value === "archived";
+}
+
+async function loadRecords<T>(key: string, fallback: T[]) {
+  const rows = await queryRows<SettingsRow>("SELECT setting_value FROM admin_site_settings WHERE setting_key = ? LIMIT 1", [key]);
+
+  if (!rows[0]) {
+    await saveRecords(key, fallback);
+    return fallback;
+  }
+
+  const parsed = parseJson(rows[0].setting_value);
+  return Array.isArray(parsed) ? parsed as T[] : fallback;
+}
+
+async function saveRecords<T>(key: string, records: T[]) {
+  await executeSql(
+    `INSERT INTO admin_site_settings (setting_key, setting_value, description, is_public)
+     VALUES (?, CAST(? AS JSON), ?, TRUE)
+     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), description = VALUES(description), is_public = TRUE`,
+    [key, JSON.stringify(records), `Data ${key.replaceAll("_", " ")}`],
+  );
+}
+
+function parseJson(value: string | unknown) {
+  if (typeof value !== "string") return value;
+  try { return JSON.parse(value); } catch { return null; }
 }
 
 function normalizeArtTypeIds(value: string[]) {
@@ -346,12 +307,5 @@ function normalizeArtTypeIds(value: string[]) {
 }
 
 function normalizeSlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
+  return value.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").replace(/-{2,}/g, "-");
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 const adminNavigationItems = [
   { label: "Dasbor", href: "/admin" },
   { label: "Beranda Website", href: "/admin/homepage" },
+  { label: "Profil Desa", href: "/admin/profil" },
   { label: "Perangkat Desa", href: "/admin/perangkat" },
   { label: "Berita", href: "/admin/berita" },
   { label: "Potensi", href: "/admin/potensi" },
