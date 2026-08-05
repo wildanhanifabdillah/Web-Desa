@@ -4,6 +4,7 @@ import type { PotentialCategory } from "@/lib/potential-categories";
 import type { PublicNewsItem } from "@/lib/public-news";
 import type { HomepageHeroBanner } from "@/lib/homepage-hero-banner";
 import type { HomepageProfileSummary } from "@/lib/homepage-profile-summary";
+import type { StatisticMetric } from "@/lib/statistics";
 
 export async function HomepageHero() {
   const { data: hero } = await fetchPublicApi<ApiResponse<HomepageHeroBanner>>("/api/homepage/hero-banner");
@@ -91,23 +92,13 @@ export async function ProfileSummarySection() {
   );
 }
 
-type HomepageStatisticMetric = {
-  id: string;
-  label: string;
-  value: number;
-  unit: string;
-  featured?: boolean;
-};
-
 type StatisticsApiData = {
-  overview: HomepageStatisticMetric[];
+  overview: StatisticMetric[];
 };
 
 export async function StatisticsSection() {
   const { data } = await fetchPublicApi<ApiResponse<StatisticsApiData>>("/api/statistics");
-  const stats = data.overview
-    .filter((item) => item.featured ?? true)
-    .slice(0, 4);
+  const stats = data.overview.slice(0, 4);
 
   const accentClasses = [
     "bg-sage-100 text-sage-800",
