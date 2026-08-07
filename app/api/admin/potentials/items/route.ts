@@ -91,7 +91,12 @@ export async function PUT(request: Request) {
     return Response.json({ error: "ID atau slug item potensi wajib dikirim." }, { status: 400 });
   }
 
-  const item = await updatePotentialItem(id, parsed.input);
+  const currentItem = await getPotentialItem(id);
+  const imageValue = typeof parsed.input.image === "string" ? parsed.input.image.trim() : "";
+  const input = currentItem && imageValue.length === 0
+    ? { ...parsed.input, image: currentItem.image }
+    : parsed.input;
+  const item = await updatePotentialItem(id, input);
 
   if (!item) {
     return Response.json({ error: "Item potensi tidak ditemukan." }, { status: 404 });
