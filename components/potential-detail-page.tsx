@@ -15,12 +15,20 @@ export function PotentialDetailPage({
   previousCategory,
   relatedCategories,
 }: PotentialDetailPageProps) {
+  const itemCount = category.gallery.length;
+  const heroImage = category.gallery[0]?.image ?? category.image;
+  const heroMetricValue = itemCount > 0 ? itemCount.toString() : category.stats.value;
+  const heroMetricLabel = category.stats.label;
+  const heroHighlights = itemCount > 0
+    ? category.gallery.slice(0, 3).map((item) => item.title)
+    : category.highlights;
+
   return (
     <main className="bg-stone-50 text-slate-950">
       <section className="relative isolate overflow-hidden bg-slate-950 px-4 pb-14 pt-28 text-white sm:px-6 sm:pb-16 sm:pt-32 lg:px-8 lg:pb-24">
         <div
           className="absolute inset-0 -z-20 bg-cover bg-center"
-          style={{ backgroundImage: `url(${category.image})` }}
+          style={{ backgroundImage: `url(${heroImage})` }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(15,23,42,0.96),rgba(15,23,42,0.8)_50%,rgba(63,111,74,0.38))]" />
@@ -54,13 +62,13 @@ export function PotentialDetailPage({
               {category.label}
             </span>
             <strong className="mt-5 block text-4xl font-semibold">
-              {category.stats.value}
+              {heroMetricValue}
             </strong>
             <span className="mt-1 block text-sm text-slate-200">
-              {category.stats.label}
+              {heroMetricLabel}
             </span>
             <div className="mt-5 flex flex-wrap gap-2">
-              {category.highlights.map((highlight) => (
+              {heroHighlights.map((highlight) => (
                 <span
                   key={highlight}
                   className="rounded-md bg-white/10 px-3 py-2 text-xs font-semibold text-white"
