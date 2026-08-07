@@ -1,6 +1,7 @@
 import type { RowDataPacket } from "mysql2";
 import { executeSql, isDatabaseConfigured, queryRows, type SqlValue } from "@/lib/db";
 import { getPotentialCategories, type PotentialCategory } from "@/lib/potential-categories";
+import { listPotentialItems, type PotentialItemRecord } from "@/lib/potential-item-store";
 import { loadJsonFile, resetJsonFile, saveJsonFile } from "@/lib/json-file-store";
 
 export type PotentialCategoryInput = Omit<PotentialCategory, "slug"> & {
@@ -29,6 +30,7 @@ type CategoryRow = RowDataPacket & {
 type OrderedTextRow = RowDataPacket & { category_id: string; value_text: string };
 type ProgramRow = RowDataPacket & { category_id: string; title: string; description: string };
 type GalleryRow = RowDataPacket & { category_id: string; title: string; description: string; image_url: string };
+type ItemGalleryRow = RowDataPacket & { category_id: string; title: string; summary: string; image_url: string };
 
 let categoryRecords: PotentialCategory[] | null = null;
 
@@ -45,7 +47,7 @@ export async function listCategoryRecords() {
     return listSqlCategoryRecords();
   }
 
-  return ensureCategoryRecords();
+  return hydrateFallbackCategories(await ensureCategoryRecords());
 }
 
 export async function getCategoryRecord(slug: string) {
@@ -54,8 +56,9 @@ export async function getCategoryRecord(slug: string) {
   }
 
   const records = await ensureCategoryRecords();
+  const hydratedRecords = await hydrateFallbackCategories(records);
 
-  return records.find((record) => record.slug === slug) ?? null;
+  return hydratedRecords.find((record) => record.slug === slug) ?? null;
 }
 
 export async function createCategoryRecord(input: PotentialCategoryInput) {
@@ -268,6 +271,13 @@ async function hydrateSqlCategories(rows: CategoryRow[]) {
   const opportunities = await queryRows<OrderedTextRow>(`SELECT category_id, description AS value_text FROM potential_opportunities WHERE category_id IN (${placeholders}) ORDER BY display_order ASC`, values);
   const programs = await queryRows<ProgramRow>(`SELECT category_id, title, description FROM potential_programs WHERE category_id IN (${placeholders}) ORDER BY display_order ASC`, values);
   const gallery = await queryRows<GalleryRow>(`SELECT category_id, title, description, image_url FROM potential_gallery_items WHERE category_id IN (${placeholders}) ORDER BY display_order ASC`, values);
+  const itemGallery = await queryRows<ItemGalleryRow>(
+    `SELECT category_id, title, summary, image_url
+    FROM potential_items
+    WHERE category_id IN (${placeholders}) AND status = 'published'
+    ORDER BY display_order ASC, published_at DESC, updated_at DESC`,
+    values,
+  );
 
   return rows.map((row) => ({
     slug: row.slug,
@@ -287,13 +297,55 @@ async function hydrateSqlCategories(rows: CategoryRow[]) {
         email: row.contact_email,
       },
     },
-    gallery: gallery.filter((item) => item.category_id === row.id).map((item) => ({ title: item.title, description: item.description, image: item.image_url })),
+    gallery: getSqlCategoryGallery(row.id, itemGallery, gallery),
     stats: { value: row.stat_value, label: row.stat_label },
     highlights: highlights.filter((item) => item.category_id === row.id).map((item) => item.value_text),
     accentClassName: row.accent_class_name,
   } satisfies PotentialCategory));
 }
 
+async function hydrateFallbackCategories(categories: PotentialCategory[]) {
+  const items = await listPotentialItems();
+
+  return categories.map((category) => ({
+    ...category,
+    gallery: getFallbackCategoryGallery(category, items),
+  }));
+}
+
+function getFallbackCategoryGallery(category: PotentialCategory, items: PotentialItemRecord[]) {
+  const publishedItems = items
+    .filter((item) => item.categorySlug === category.slug && item.status === "published")
+    .map((item) => ({
+      title: item.title,
+      description: item.summary,
+      image: item.image,
+    }));
+
+  return publishedItems.length > 0 ? publishedItems : category.gallery;
+}
+
+function getSqlCategoryGallery(categoryId: string, items: ItemGalleryRow[], fallbackGallery: GalleryRow[]) {
+  const publishedItems = items
+    .filter((item) => item.category_id === categoryId)
+    .map((item) => ({
+      title: item.title,
+      description: item.summary,
+      image: item.image_url,
+    }));
+
+  if (publishedItems.length > 0) {
+    return publishedItems;
+  }
+
+  return fallbackGallery
+    .filter((item) => item.category_id === categoryId)
+    .map((item) => ({
+      title: item.title,
+      description: item.description,
+      image: item.image_url,
+    }));
+}
 export function isPotentialCategoryInput(value: unknown): value is PotentialCategoryInput {
   if (!value || typeof value !== "object") {
     return false;

@@ -145,7 +145,7 @@ export async function PotentialSection() {
     label: category.label,
     title: category.title,
     description: category.summary,
-    image: category.image,
+    image: category.gallery[0]?.image ?? category.image,
     href: getPotentialHref(category),
   }));
 
