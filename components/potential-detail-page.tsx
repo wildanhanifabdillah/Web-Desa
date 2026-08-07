@@ -118,20 +118,6 @@ export function PotentialDetailPage({
         </article>
 
         <aside className="grid gap-4 self-start">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Narahubung
-            </p>
-            <h3 className="mt-3 text-lg font-semibold text-slate-950">
-              {category.detail.contact.name}
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {category.detail.contact.role}
-            </p>
-            <div className="mt-4 break-all rounded-md bg-stone-100 px-3 py-2 text-xs font-semibold text-slate-700">
-              {category.detail.contact.email}
-            </div>
-          </div>
           <div className="grid gap-2">
             <Link
               href="/potensi"
