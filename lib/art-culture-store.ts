@@ -1,4 +1,4 @@
-﻿import type { RowDataPacket } from "mysql2";
+import type { RowDataPacket } from "mysql2";
 import { executeSql, queryRows } from "@/lib/db";
 
 export type ArtCultureStatus = "active" | "draft" | "archived";
@@ -43,6 +43,7 @@ type SettingsRow = RowDataPacket & { setting_value: string | unknown };
 
 const typesKey = "art_culture_types";
 const groupsKey = "art_culture_groups";
+const publicArtTypeSlugs = new Set(["lengger", "jaran-kepang"]);
 
 const initialArtTypes: ArtTypeRecord[] = [
   {
@@ -71,32 +72,6 @@ const initialArtTypes: ArtTypeRecord[] = [
     status: "active",
     updatedAt: "2026-07-12T00:00:00.000Z",
   },
-  {
-    id: "calung",
-    slug: "calung",
-    name: "Calung",
-    summary: "Musik bambu tradisional yang memperkuat suasana pentas budaya desa.",
-    description: "Calung menghadirkan warna musikal khas yang dapat mengiringi pentas seni maupun tampil sebagai sajian utama.",
-    history: "Kelompok musik bambu dikelola warga sebagai bagian dari dokumentasi dan penguatan ekspresi budaya lokal.",
-    imageUrl: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=1200&q=85",
-    imageAlt: "Alat musik tradisional di panggung budaya",
-    displayOrder: 3,
-    status: "active",
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
-  {
-    id: "bundengan",
-    slug: "bundengan",
-    name: "Bundengan",
-    summary: "Kesenian khas Wonosobo yang memperkaya identitas budaya Keseneng.",
-    description: "Bundengan menjadi potensi budaya yang dapat dikenalkan melalui edukasi, pertunjukan, dan dokumentasi digital desa.",
-    history: "Penguatan Bundengan dilakukan melalui pengarsipan cerita, pelaku, dan kesempatan tampil dalam kegiatan budaya.",
-    imageUrl: "https://images.unsplash.com/photo-1526142684086-7ebd69df27a5?auto=format&fit=crop&w=1200&q=85",
-    imageAlt: "Musisi tradisional dalam pertunjukan budaya",
-    displayOrder: 4,
-    status: "active",
-    updatedAt: "2026-07-12T00:00:00.000Z",
-  },
 ];
 
 const initialArtGroups: ArtGroupRecord[] = [
@@ -104,7 +79,7 @@ const initialArtGroups: ArtGroupRecord[] = [
     id: "bws",
     slug: "bws",
     name: "BWS",
-    artTypeIds: ["jaran-kepang", "lengger"],
+    artTypeIds: [],
     foundedHistory: "Paguyuban BWS berkembang dari inisiatif warga untuk menjaga pertunjukan rakyat dan membuka ruang latihan bagi generasi muda.",
     performanceManagement: "Manajemen pertunjukan dikelola melalui koordinator kelompok, jadwal latihan, perlengkapan pentas, dan komunikasi pemesan acara.",
     memberCount: 45,
@@ -122,7 +97,7 @@ const initialArtGroups: ArtGroupRecord[] = [
     id: "rms",
     slug: "rms",
     name: "RMS",
-    artTypeIds: ["calung", "lengger"],
+    artTypeIds: [],
     foundedHistory: "RMS menjadi wadah seni warga untuk mengelola latihan dan dokumentasi pertunjukan budaya.",
     performanceManagement: "Kelompok mengatur pemain, perlengkapan musik, dan kebutuhan acara secara kolektif.",
     memberCount: 32,
@@ -140,7 +115,7 @@ const initialArtGroups: ArtGroupRecord[] = [
     id: "krido-budoyo",
     slug: "krido-budoyo",
     name: "Krido Budoyo",
-    artTypeIds: ["jaran-kepang", "bundengan"],
+    artTypeIds: [],
     foundedHistory: "Krido Budoyo bergerak sebagai kelompok pelestari seni yang aktif dalam kegiatan desa dan hajatan warga.",
     performanceManagement: "Pengurus kelompok menyiapkan jadwal tampil, kebutuhan properti, dan pendampingan anggota muda.",
     memberCount: 38,
@@ -158,6 +133,7 @@ const initialArtGroups: ArtGroupRecord[] = [
 
 export async function listArtTypes(status?: ArtCultureStatus) {
   return (await loadRecords<ArtTypeRecord>(typesKey, initialArtTypes))
+    .filter((item) => publicArtTypeSlugs.has(item.slug))
     .filter((item) => status ? item.status === status : true)
     .sort((left, right) => left.displayOrder - right.displayOrder);
 }

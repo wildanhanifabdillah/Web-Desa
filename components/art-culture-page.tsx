@@ -57,7 +57,7 @@ export function ArtCulturePage({ types, groups }: ArtCulturePageProps) {
         <div className="max-w-2xl">
           <p className="section-kicker">Jenis Kesenian</p>
           <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-            Empat kesenian utama yang menjadi wajah budaya Keseneng.
+            Dua kesenian utama yang menjadi wajah budaya Keseneng.
           </h2>
         </div>
         <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -91,12 +91,7 @@ export function ArtCulturePage({ types, groups }: ArtCulturePageProps) {
               <article key={group.id} className="overflow-hidden rounded-lg border border-slate-200 bg-stone-50 shadow-sm">
                 <div className="h-52 bg-cover bg-center" style={{ backgroundImage: `url(${group.imageUrl})` }} aria-label={group.imageAlt} />
                 <div className="p-5">
-                  <div className="flex flex-wrap gap-2">
-                    {group.artTypes.map((type) => (
-                      <span key={type.id} className="rounded-md bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-800">{type.name}</span>
-                    ))}
-                  </div>
-                  <h3 className="mt-4 text-2xl font-semibold text-slate-950">{group.name}</h3>
+                  <h3 className="text-2xl font-semibold text-slate-950">{group.name}</h3>
                   <dl className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                     <div className="rounded-md bg-white p-3">
                       <dt className="font-semibold text-slate-950">Anggota</dt>

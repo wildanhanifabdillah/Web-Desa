@@ -30,7 +30,7 @@ type CategoryRow = RowDataPacket & {
 type OrderedTextRow = RowDataPacket & { category_id: string; value_text: string };
 type ProgramRow = RowDataPacket & { category_id: string; title: string; description: string };
 type GalleryRow = RowDataPacket & { category_id: string; title: string; description: string; image_url: string };
-type ItemGalleryRow = RowDataPacket & { category_id: string; title: string; summary: string; image_url: string };
+type ItemGalleryRow = RowDataPacket & { category_id: string; title: string; description: string; image_url: string };
 
 let categoryRecords: PotentialCategory[] | null = null;
 
@@ -272,7 +272,7 @@ async function hydrateSqlCategories(rows: CategoryRow[]) {
   const programs = await queryRows<ProgramRow>(`SELECT category_id, title, description FROM potential_programs WHERE category_id IN (${placeholders}) ORDER BY display_order ASC`, values);
   const gallery = await queryRows<GalleryRow>(`SELECT category_id, title, description, image_url FROM potential_gallery_items WHERE category_id IN (${placeholders}) ORDER BY display_order ASC`, values);
   const itemGallery = await queryRows<ItemGalleryRow>(
-    `SELECT category_id, title, summary, image_url
+    `SELECT category_id, title, description, image_url
     FROM potential_items
     WHERE category_id IN (${placeholders}) AND status = 'published'
     ORDER BY display_order ASC, published_at DESC, updated_at DESC`,
@@ -318,7 +318,7 @@ function getFallbackCategoryGallery(category: PotentialCategory, items: Potentia
     .filter((item) => item.categorySlug === category.slug && item.status === "published")
     .map((item) => ({
       title: item.title,
-      description: item.summary,
+      description: item.description,
       image: item.image,
     }));
 
@@ -330,7 +330,7 @@ function getSqlCategoryGallery(categoryId: string, items: ItemGalleryRow[], fall
     .filter((item) => item.category_id === categoryId)
     .map((item) => ({
       title: item.title,
-      description: item.summary,
+      description: item.description,
       image: item.image_url,
     }));
 

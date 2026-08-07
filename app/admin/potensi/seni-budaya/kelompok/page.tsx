@@ -1,20 +1,16 @@
 import { AdminCrudPage } from "@/components/admin-crud-page";
-import { listArtGroups, listArtTypes } from "@/lib/art-culture-store";
+import { listArtGroups } from "@/lib/art-culture-store";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminKelompokSeniPage() {
-  const types = await listArtTypes();
-  const groups = (await listArtGroups()).map((group) => ({
-    ...group,
-    artTypeLabels: types.filter((type) => group.artTypeIds.includes(type.id)).map((type) => type.name),
-  }));
+  const groups = await listArtGroups();
 
   return (
     <AdminCrudPage
       eyebrow="Admin Potensi Desa"
       title="Kelola kelompok seni"
-      description="Ubah data paguyuban seni, jumlah anggota, estimasi tarif, manajemen pertunjukan, dan relasinya ke jenis kesenian."
+      description="Ubah data paguyuban seni, jumlah anggota, estimasi tarif, dan manajemen pertunjukan."
       endpoint="/api/admin/art-culture/groups"
       activeHref="/admin/potensi/seni-budaya/kelompok"
       subNavigation={[
@@ -28,7 +24,6 @@ export default async function AdminKelompokSeniPage() {
       fields={[
         { name: "name", label: "Nama paguyuban", required: true },
         { name: "slug", label: "Slug", type: "hidden" },
-        { name: "artTypeIds", label: "Jenis kesenian", type: "checkbox-group", required: true, options: types.map((type) => ({ label: type.name, value: type.id })) },
         { name: "foundedHistory", label: "Sejarah pendirian", type: "textarea", required: true },
         { name: "performanceManagement", label: "Manajemen pertunjukan", type: "textarea", required: true },
         { name: "memberCount", label: "Jumlah anggota aktif", type: "number", defaultValue: "0" },
@@ -48,7 +43,6 @@ export default async function AdminKelompokSeniPage() {
       ]}
       tableColumns={[
         { key: "name", label: "Paguyuban" },
-        { key: "artTypeLabels", label: "Jenis seni" },
         { key: "memberCount", label: "Anggota" },
         { key: "tariffMin", label: "Tarif min" },
         { key: "tariffMax", label: "Tarif max" },

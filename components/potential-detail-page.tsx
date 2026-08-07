@@ -79,9 +79,34 @@ export function PotentialDetailPage({
           <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
             Informasi {category.label.toLowerCase()} Desa Keseneng.
           </h2>
-          <p className="mt-5 text-base leading-8 text-slate-600">
-            {category.detail.description}
-          </p>
+          {category.gallery.length > 0 ? (
+            <div className="mt-6 grid gap-4">
+              {category.gallery.map((item) => (
+                <section
+                  key={`${item.title}-${item.image}`}
+                  className="grid gap-4 rounded-lg border border-slate-200 bg-stone-50 p-4 sm:grid-cols-[10rem_1fr]"
+                >
+                  <div
+                    className="min-h-36 rounded-md bg-cover bg-center"
+                    style={{ backgroundImage: `url(${item.image})` }}
+                    aria-label={item.title}
+                  />
+                  <div className="min-w-0">
+                    <h3 className="text-xl font-semibold text-slate-950">
+                      {item.title}
+                    </h3>
+                    <p className="mt-3 text-base leading-8 text-slate-600">
+                      {item.description}
+                    </p>
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 text-base leading-8 text-slate-600">
+              {category.detail.description}
+            </p>
+          )}
         </article>
 
         <aside className="grid gap-4 self-start">
