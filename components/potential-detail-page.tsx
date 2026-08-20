@@ -81,34 +81,25 @@ export function PotentialDetailPage({
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.42fr] lg:px-8 lg:py-24">
+      <section
+        id="galeri-detail"
+        className="mx-auto grid max-w-7xl gap-6 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.42fr] lg:px-8 lg:py-24"
+      >
         <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <p className="section-kicker">Detail Potensi</p>
           <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
             Informasi {category.label.toLowerCase()} Desa Keseneng.
           </h2>
           {category.gallery.length > 0 ? (
-            <div className="mt-6 grid gap-4">
-              {category.gallery.map((item) => (
-                <section
-                  key={`${item.title}-${item.image}`}
-                  className="grid gap-4 rounded-lg border border-slate-200 bg-stone-50 p-4 sm:grid-cols-[10rem_1fr]"
-                >
-                  <div
-                    className="min-h-36 rounded-md bg-cover bg-center"
-                    style={{ backgroundImage: `url(${item.image})` }}
-                    aria-label={item.title}
-                  />
-                  <div className="min-w-0">
-                    <h3 className="text-xl font-semibold text-slate-950">
-                      {item.title}
-                    </h3>
-                    <p className="mt-3 text-base leading-8 text-slate-600">
-                      {item.description}
-                    </p>
-                  </div>
-                </section>
-              ))}
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <PotentialGalleryLightbox
+                items={category.gallery}
+                cardClassName="overflow-hidden rounded-lg border border-slate-200 bg-stone-50"
+                imageClassName="h-52 bg-cover bg-center"
+                bodyClassName="p-5"
+                titleClassName="text-xl font-semibold leading-7 text-slate-950"
+                descriptionClassName="mt-3 text-base leading-8 text-slate-600"
+              />
             </div>
           ) : (
             <p className="mt-5 text-base leading-8 text-slate-600">
@@ -126,41 +117,13 @@ export function PotentialDetailPage({
               Kembali ke Potensi
             </Link>
             <Link
-              href={`/potensi#${category.slug}-galeri`}
+              href="#galeri-detail"
               className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition-colors hover:border-sage-700 hover:text-sage-800"
             >
               Buka galeri
             </Link>
           </div>
         </aside>
-      </section>
-
-      <section className="bg-slate-950 px-4 py-14 text-white sm:px-6 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-            <div className="max-w-2xl">
-              <p className="section-kicker text-sage-200">Galeri Detail</p>
-              <h2 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
-                Visual pendukung untuk potensi {category.label.toLowerCase()}.
-              </h2>
-            </div>
-            <Link
-              href={`/potensi#${category.slug}-galeri`}
-              className="inline-flex h-11 items-center justify-center rounded-md border border-white/20 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              Lihat galeri halaman utama
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <PotentialGalleryLightbox
-              items={category.gallery.map((item) => ({
-                ...item,
-                category: category.label,
-              }))}
-              imageClassName="h-56 bg-cover bg-center"
-            />
-          </div>
-        </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">

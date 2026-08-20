@@ -21,6 +21,7 @@ export default async function AdminPotensiPage({
 
   return (
     <AdminCrudPage
+      key={currentCategorySlug}
       eyebrow="Admin Potensi Desa"
       title={`Kelola ${currentCategoryLabel}`}
       description={`Tambah, ubah, hapus, dan publikasikan data ${currentCategoryLabel.toLowerCase()} yang tampil di halaman Potensi Desa.`}
